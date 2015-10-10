@@ -1,0 +1,16 @@
+<?php
+
+namespace DummyNamespace;
+
+use App\Models\Repository;
+
+class DummyClass extends Repository
+{
+   /**
+     * model class
+     *
+     * @var string
+     */
+    protected $modelClass = 'ModelClass';
+
+}

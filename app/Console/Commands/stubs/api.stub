@@ -1,0 +1,61 @@
+<?php
+
+namespace DummyNamespace;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+
+use App\Http\Api\Handler;
+
+
+class DummyClass extends Handler
+{
+    /**
+     * api uri
+     *
+     * @var string
+     */
+    public static $uri = '';
+
+
+    /**
+     * @param Request $request
+     *
+     * @return Response
+     */
+    protected function get(Request $request)
+    {
+        return $this->respondWithCode(Response::HTTP_METHOD_NOT_ALLOWED);
+    }
+
+    /**
+     * @param Request $request
+     *
+     * @return Response
+     */
+    protected function post(Request $request)
+    {
+        return $this->respondWithCode(Response::HTTP_METHOD_NOT_ALLOWED);
+    }
+
+    /**
+     * @param Request $request
+     *
+     * @return Response
+     */
+    protected function put(Request $request)
+    {
+        return $this->respondWithCode(Response::HTTP_METHOD_NOT_ALLOWED);
+    }
+
+    /**
+     * @param Request $request
+     *
+     * @return Response
+     */
+    protected function delete(Request $request)
+    {
+        return $this->respondWithCode(Response::HTTP_METHOD_NOT_ALLOWED);
+    }
+
+}

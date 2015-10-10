@@ -15,9 +15,21 @@ use Laravel\Lumen\Application;
 
 $app->group(['prefix' => 'api/v1'], function (Application $app) {
 
-        $app->get('/', function () {
-            return '';
-        });
+    $methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+
+    $handlers = [
+        'Users.User'
+    ];
+
+    foreach ($methods as $method) {
+        foreach ($handlers as $handler) {
+            $handlerClass = str_replace('.', '\\', sprintf('App.Http.Api.%s', $handler));
+            if (class_exists($handlerClass)) {
+                $app->addRoute($method, $handlerClass::$uri, sprintf('%s@handleRequest', $handlerClass));
+            }
+        }
+
+    }
 
 });
 
