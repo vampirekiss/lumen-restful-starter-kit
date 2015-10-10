@@ -41,7 +41,6 @@ class RepositoryMakeCommand extends GeneratorCommand
 
         if ($this->files->exists($path)) {
             $this->error($this->type . ' already exists!');
-
             return;
         }
 
@@ -85,10 +84,8 @@ class RepositoryMakeCommand extends GeneratorCommand
      */
     protected function build($name, $modelName)
     {
-        $stub = $this->files->get($this->getStub());
-        $stub = $this->replaceModelClass($stub, $modelName);
-
-        return $this->replaceNamespace($stub, $name)->replaceClass($stub, $name);
+        $stub = parent::buildClass($name);
+        return $this->replaceModelClass($stub, $modelName);
     }
 
     /**

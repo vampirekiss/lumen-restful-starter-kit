@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Models\Users;
+namespace App\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 
-class User extends Model
+class Token extends Model
 {
     //
 }

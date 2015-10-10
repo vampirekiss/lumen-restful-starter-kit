@@ -2,60 +2,41 @@
 
 namespace DummyNamespace;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-
 use App\Http\Api\Handler;
-
+use RepositoryClass;
 
 class DummyClass extends Handler
 {
     /**
-     * api uri
-     *
-     * @var string
+     * @var \RepositoryClass
      */
-    public static $uri = '';
-
+    protected $repository;
 
     /**
-     * @param Request $request
+     * DummyClass constructor.
      *
-     * @return Response
+     * @param \RepositoryClass $repository
+     *
+     * @return DummyClass
      */
-    protected function get(Request $request)
+    public function __construct(ShortRepositoryClass $repository)
     {
-        return $this->respondWithCode(Response::HTTP_METHOD_NOT_ALLOWED);
+        $this->repository = $repository;
     }
 
     /**
-     * @param Request $request
-     *
-     * @return Response
+     * @return \RepositoryClass
      */
-    protected function post(Request $request)
+    protected function getRepository()
     {
-        return $this->respondWithCode(Response::HTTP_METHOD_NOT_ALLOWED);
+        return $this->repository;
     }
 
-    /**
-     * @param Request $request
-     *
-     * @return Response
+   /**
+     * @return array
      */
-    protected function put(Request $request)
+    protected function getValidationRules()
     {
-        return $this->respondWithCode(Response::HTTP_METHOD_NOT_ALLOWED);
+        return [];
     }
-
-    /**
-     * @param Request $request
-     *
-     * @return Response
-     */
-    protected function delete(Request $request)
-    {
-        return $this->respondWithCode(Response::HTTP_METHOD_NOT_ALLOWED);
-    }
-
 }

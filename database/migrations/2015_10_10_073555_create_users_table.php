@@ -23,7 +23,7 @@ class CreateUsersTable extends Migration
             $table->string('last_login_ip');
             $table->timestamps();
 
-            $table->unique(['account', 'email', 'cellphone']);
+            $table->unique('cellphone');
         });
     }
 

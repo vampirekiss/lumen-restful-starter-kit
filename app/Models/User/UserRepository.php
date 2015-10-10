@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Users;
+namespace App\Models\User;
 
 use App\Models\Repository;
 
@@ -11,6 +11,6 @@ class UserRepository extends Repository
      *
      * @var string
      */
-    protected $modelClass = 'App\Models\Users\User';
+    protected $modelClass = 'App\Models\User\User';
 
 }

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 abstract class Repository
 {
     /**
@@ -74,6 +76,19 @@ abstract class Repository
     public function delete($id)
     {
         return $this->_call('destroy', [$id]);
+    }
+
+    /**
+     * @param array $attributes
+     * @param bool  $exists
+     *
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function create($attributes = [], $exists = false)
+    {
+        /** @var Model $model */
+        $model = $this->_call('create', [$attributes, $exists]);
+        return $model;
     }
 
 }

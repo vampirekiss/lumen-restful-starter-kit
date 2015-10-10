@@ -17,20 +17,18 @@ $app->group(['prefix' => 'api/v1'], function (Application $app) {
 
     $methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
-    $handlers = [
-        'Users.User'
+    $routeRules = [
+        'User.User' => '/users',
+        'User.Token' => '/user-tokens'
     ];
 
     foreach ($methods as $method) {
-        foreach ($handlers as $handler) {
+        foreach ($routeRules as $handler => $uri) {
             $handlerClass = str_replace('.', '\\', sprintf('App.Http.Api.%s', $handler));
-            if (class_exists($handlerClass)) {
-                $action = sprintf('%s@handleRequest', $handlerClass);
-                $app->addRoute($method, $handlerClass::$uri, $action);
-                $app->addRoute($method, $handlerClass::$uri . '/{id}', $action);
-            }
+            $action = sprintf('%s@handleRequest', $handlerClass);
+            $app->addRoute($method, $uri, $action);
+            $app->addRoute($method, $uri . '/{id}', $action);
         }
-
     }
 
 });
