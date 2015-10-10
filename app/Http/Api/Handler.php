@@ -51,7 +51,7 @@ abstract class Handler extends Controller
      * @throws \ErrorException
      * @return JsonResponse
      */
-    public function handleRequest(Request $request)
+    public function handleRequest(Request $request, $id = null)
     {
         $method = strtolower($request->getMethod());
 
@@ -59,66 +59,25 @@ abstract class Handler extends Controller
             return $this->respondWithCode(JsonResponse::HTTP_BAD_REQUEST);
         }
 
-        $callable = [$this, $method];
+        $response = $id === null ?
+            $this->collection() : $this->document($id);
 
-        if (!is_callable($callable)) {
-            return $this->respondWithCode(JsonResponse::HTTP_METHOD_NOT_ALLOWED);
-        }
-
-        $response = call_user_func_array($callable, [$request]);
-        
         if (!$response instanceof JsonResponse) {
-            throw new \ErrorException(
-                sprintf("%s::%s must return a JsonResponse instance", get_called_class(), $method)
-            );
+            throw new \ErrorException("unexpected return value, must be a JsonResponse instance");
         }
 
         return $response;
     }
 
-    /**
-     * @param Request $request
-     *
-     * @return JsonResponse
-     */
-    protected function get(Request $request)
-    {
-        $response = $this->respond(
-            $this->getRepository()->findByProps($request->query->all())
-        );
-        return $response;
-    }
-
-    /**
-     * @param Request $request
-     *
-     * @return JsonResponse
-     */
-    protected function post(Request $request)
+    protected function document($id)
     {
         return $this->respondWithCode(JsonResponse::HTTP_METHOD_NOT_ALLOWED);
     }
 
-    /**
-     * @param Request $request
-     *
-     * @return JsonResponse
-     */
-    protected function put(Request $request)
+    protected function collection()
     {
         return $this->respondWithCode(JsonResponse::HTTP_METHOD_NOT_ALLOWED);
     }
-
-    /**
-     * @param Request $request
-     *
-     * @return JsonResponse
-     */
-    protected function delete(Request $request)
-    {
-        return $this->respondWithCode(JsonResponse::HTTP_METHOD_NOT_ALLOWED);
-    }
-
 
     /**
      * set message for JsonResponse body
@@ -153,7 +112,6 @@ abstract class Handler extends Controller
 
         return $factory->json($body, $statusCode, $headers, $options);
     }
-
 
     /**
      * @param int $statusCode

@@ -25,7 +25,9 @@ $app->group(['prefix' => 'api/v1'], function (Application $app) {
         foreach ($handlers as $handler) {
             $handlerClass = str_replace('.', '\\', sprintf('App.Http.Api.%s', $handler));
             if (class_exists($handlerClass)) {
-                $app->addRoute($method, $handlerClass::$uri, sprintf('%s@handleRequest', $handlerClass));
+                $action = sprintf('%s@handleRequest', $handlerClass);
+                $app->addRoute($method, $handlerClass::$uri, $action);
+                $app->addRoute($method, $handlerClass::$uri . '/{id}', $action);
             }
         }
 
