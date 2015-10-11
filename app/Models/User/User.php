@@ -2,7 +2,7 @@
 
 namespace App\Models\User;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Model;
 
 class User extends Model
 {
@@ -11,7 +11,9 @@ class User extends Model
      *
      * @var array
      */
-    protected $fillable = ['cellphone'];
+    protected $fillable = [
+        'cellphone', 'password'
+    ];
 
     /**
      * The attributes that aren't mass assignable.

@@ -2,13 +2,16 @@
 
 namespace App\Http\Api;
 
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Contracts\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Laravel\Lumen\Routing\Controller;
-use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-
+use App\Restful\Repository;
+use App\Restful\Representation;
+use App\Restful\ResourceActionFactory;
+use App\Restful\Request as RestfulRequest;
 
 /**
  * api handler class
@@ -17,6 +20,20 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  */
 abstract class Handler extends Controller
 {
+    public static $availableMethods = [
+        'GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'
+    ];
+
+    /**
+     * @var JsonResponse
+     */
+    private $_response;
+
+    /**
+     * @var Representation
+     */
+    private $_representation;
+
     /**
      * handle request
      *
@@ -26,23 +43,38 @@ abstract class Handler extends Controller
      * @return \Illuminate\Http\JsonResponse
      * @throws \ErrorException
      */
-    public function handleRequest(Request $request, $id = null)
+    public function handle(Request $request, $id = null)
     {
-        $method = strtolower($request->getMethod());
+        $method = $request->getMethod();
 
-        if ($method != 'get' && !$request->isJson()) {
-            return $this->respondWithCode(JsonResponse::HTTP_BAD_REQUEST);
+        if ($method != 'GET' && !$request->isJson()) {
+            return $this->respondWithCode(
+                JsonResponse::HTTP_BAD_REQUEST, 'missing header "Content-Type: application/json"'
+            );
+        }
+
+        $isWriteOperation = in_array($method, ['POST', 'PATCH', 'PATCH', 'DELETE']);
+
+        $hasException = false;
+
+        /** @var \Illuminate\Database\Connection  $db */
+        $db = app()->make('db');
+
+        if ($isWriteOperation) {
+            $db->beginTransaction();
         }
 
         try {
-            $response = $id === null ?
-                $this->collection($request, $method) : $this->document($request, $method, $id);
+            $id === null ?
+                $this->collection($request) : $this->document($request, $id);
+            $response = $this->respond($this->getRepresentation()->getContent());
         } catch (\Exception $e) {
             $response = $this->renderException($e);
+            $hasException = true;
         }
 
-        if (!$response instanceof JsonResponse) {
-            throw new \ErrorException("unexpected return value, must be a JsonResponse instance");
+        if ($isWriteOperation) {
+            $hasException ?  $db->rollBack() : $db->commit();
         }
 
         return $response;
@@ -56,54 +88,130 @@ abstract class Handler extends Controller
     protected function renderException(\Exception $e)
     {
         $codeMaps = [
-           ModelNotFoundException::class => JsonResponse::HTTP_NOT_FOUND,
+            ModelNotFoundException::class => JsonResponse::HTTP_NOT_FOUND,
+            ValidationException::class    => JsonResponse::HTTP_UNPROCESSABLE_ENTITY
         ];
 
         $exceptionClass = get_class($e);
 
         $statusCode = isset($codeMaps[$exceptionClass]) ? $codeMaps[$exceptionClass] : call_user_func(
-            function() use ($e) {
-                try {
-                    $statusCode = $e->getStatusCode();
-                } catch (\Exception $_) {
-                    $statusCode = $e->getCode();
-                }
-                return $statusCode;
+            function () use ($e) {
+                return method_exists($e, 'getStatusCode') ? $e->getStatusCode() : $e->getCode();
             }
         );
 
         if ($statusCode >= 100 && $statusCode <= 599) {
-            return $this->respondWithCode($statusCode);
+            return $this->respond(
+                null, $statusCode, $this->buildExceptionMessage($e, $statusCode)
+            );
         }
 
         throw $e;
     }
 
-    protected function document(Request $request, $method, $id)
+    /**
+     * @param \Exception $e
+     * @param  int       $statusCode
+     *
+     * @return string
+     */
+    protected function buildExceptionMessage(\Exception $e, $statusCode)
     {
-        if ($method == 'get') {
-            $model = $this->getRepository()->findOrFail($id);
-            return $this->respond($model);
+        if ($e instanceof ModelNotFoundException) {
+            return JsonResponse::$statusTexts[$statusCode];
         }
 
+        if ($e instanceof ValidationException) {
+            return implode("\n", $e->errors()->all());
+        }
+
+        return $e->getMessage();
+    }
+
+    protected function document(Request $request, $id)
+    {
         return $this->respondWithCode(JsonResponse::HTTP_METHOD_NOT_ALLOWED);
     }
 
-    protected function collection(Request $request, $method)
+    /**
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return void
+     */
+    protected function collection(Request $request)
     {
-        if ($method == 'get') {
-            return $this->respond($this->getRepository()->all());
-        } elseif ($method == 'post') {
-            /** @var ParameterBag $json */
-            $json = $request->json();
-            $this->validateInput($json->all());
-            $model = $this->getRepository()->create($json->all());
-            return $this->respond($model);
-        }
+        $collection = ResourceActionFactory::createCollection(
+            $this->getRepository(), $this->getRepresentation()
+        );
+
+        $collection->handle($this->_prepareRequest($request));
     }
 
     /**
-     * @param mixed $input
+     * @param \Illuminate\Http\Request $request
+     * @param mixed                    $id
+     *
+     * @return \App\Restful\Request
+     */
+    private function _prepareRequest(Request $request, $id = null)
+    {
+        $restfulRequest = new RestfulRequest();
+
+        if (in_array($request->getMethod(), ['POST', 'PATCH', 'PUT'])) {
+            $input = $request->json();
+            $this->validateInput($input);
+        } else {
+            $input = $request->query;
+        }
+
+        $restfulRequest->method = $request->getMethod();
+        $restfulRequest->input = $input;
+        $restfulRequest->resourceId = $id;
+
+        return $restfulRequest;
+    }
+
+    /**
+     * @return JsonResponse
+     */
+    public function getResponse()
+    {
+        if (!$this->_response) {
+            $this->_response = response()->json();
+        }
+        return $this->_response;
+    }
+
+    /**
+     * @param JsonResponse $response
+     */
+    public function setResponse($response)
+    {
+        $this->_response = $response;
+    }
+
+    /**
+     * @return \App\Restful\Representation
+     */
+    public function getRepresentation()
+    {
+        if (!$this->_representation) {
+            $this->_representation = new Representation($this->getResponse());
+        }
+        return $this->_representation;
+    }
+
+    /**
+     * @param Representation $representation
+     */
+    public function setRepresentation(Representation $representation)
+    {
+        $this->_representation = $representation;
+    }
+
+
+    /**
+     * @param \Symfony\Component\HttpFoundation\ParameterBag $input
      *
      * @return void
      * @throws \Symfony\Component\HttpKernel\Exception\HttpException
@@ -118,14 +226,11 @@ abstract class Handler extends Controller
 
         /** @var \Illuminate\Validation\Validator $validator */
         $validator = $this->getValidationFactory()->make(
-            $input, $rules, $this->getCustomValidationMessages()
+            $input->all(), $rules, $this->getCustomValidationMessages()
         );
 
         if ($validator->fails()) {
-            throw new HttpException(
-                JsonResponse::HTTP_UNPROCESSABLE_ENTITY,
-                implode("\n", $validator->getMessageBag()->all())
-            );
+            throw new ValidationException($validator);
         }
     }
 
@@ -155,12 +260,20 @@ abstract class Handler extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function respond($data, $statusCode = JsonResponse::HTTP_OK, $message = '', array $headers = [])
+    protected function respond($data, $statusCode = null, $message = '', array $headers = [])
     {
-        $message = $message ?: JsonResponse::$statusTexts[$statusCode];
+        /** @var JsonResponse $response */
+        $response = $this->getResponse();;
 
-        /** @var \Laravel\Lumen\Http\ResponseFactory $factory */
-        $factory = response();
+        if ($statusCode !== null) {
+            $response->setStatusCode($statusCode);
+        }
+
+        foreach ($headers as $key => $value) {
+            $response->header($key, $value);
+        }
+
+        $message = $message ?: JsonResponse::$statusTexts[$response->getStatusCode()];
 
         $body = [
             'code'    => $statusCode,
@@ -168,21 +281,25 @@ abstract class Handler extends Controller
             'message' => $message
         ];
 
-        return $factory->json($body, $statusCode, $headers);
+        $response->setData($body);
+
+        return $response;
     }
 
     /**
-     * @param int $statusCode
+     * @param int    $statusCode
+     * @param string $message
      *
-     * @return JsonResponse
+     * @return \Illuminate\Http\JsonResponse
      */
-    protected function respondWithCode($statusCode)
+    protected function respondWithCode($statusCode, $message = '')
     {
-        return $this->respond(null, $statusCode);
+        return $this->respond(null, $statusCode, $message);
     }
 
+
     /**
-     * @return \App\Models\Repository
+     * @return Repository
      */
     protected abstract function getRepository();
 

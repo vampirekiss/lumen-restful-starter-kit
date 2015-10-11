@@ -3,19 +3,18 @@
 namespace App\Http\Api\User;
 
 use App\Http\Api\Handler;
-use App\Models\User\UserRepository;
 
 class User extends Handler
 {
     /**
-     * @var \App\Models\User\UserRepository
+     * @var \App\Http\Api\User\UserRepository
      */
     protected $repository;
 
     /**
      * User constructor.
      *
-     * @param \App\Models\User\UserRepository $repository
+     * @param \App\Http\Api\User\UserRepository $repository
      *
      * @return User
      */
@@ -42,5 +41,6 @@ class User extends Handler
             'password' => 'required|min:4|max:32'
         ];
     }
+
 
 }
