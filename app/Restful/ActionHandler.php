@@ -23,7 +23,6 @@ abstract class ActionHandler implements IActionHandler
     public function handle(RestfulRequest $request)
     {
         $callable = [$this, $request->method];
-
         return call_user_func_array($callable, [$request]);
     }
 

@@ -7,7 +7,9 @@
 
 namespace App\Restful\ActionHandlers;
 
-class DocumentHandler extends ResourceAction
+use App\Restful\ActionHandler;
+
+class DocumentHandler extends ActionHandler
 {
 
 }

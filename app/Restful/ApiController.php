@@ -18,16 +18,19 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
     /**
      * @var array
      */
-    public static $availableMethods = [
-        'GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'
-    ];
-
-    /**
-     * @var array
-     */
     public static $writeMethods = [
         'POST', 'PATCH', 'PUT', 'DELETE'
     ];
+
+    /**
+     * @var bool
+     */
+    protected $autoStartTransaction = true;
+
+    /**
+     * @var string
+     */
+    protected $resourceClass = '';
 
     /**
      * handle request
@@ -40,7 +43,7 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
     public function handleRequest(Request $request)
     {
         /** @var IFormatter $formatter */
-        $formatter = $this->make(IFormatter::class);
+        $formatter = $this->make('restful.formatter');
 
         $restfulRequest = $formatter->formatRequest($request);
 
@@ -56,7 +59,15 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
                 ->setMessages($validator->getMessageBag()->all())
                 ->build();
         } else {
-            $actionResult = $actionHandler->handle($restfulRequest);
+            if ($this->autoStartTransaction) {
+                /** @var \Illuminate\Database\Connection $db */
+                $db = $this->make('db');
+                $actionResult = $db->transaction(function () use ($actionHandler, $restfulRequest) {
+                     return $actionHandler->handle($restfulRequest);
+                });
+            } else {
+                $actionResult = $actionHandler->handle($restfulRequest);
+            }
         }
 
         return $formatter->formatActionResult($actionResult);
@@ -73,11 +84,13 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
     {
         /** @var IActionHandler|IRepositoryAware $handler */
         $handler = null;
+
         if ($restfulRequest->resourceId) {
             $handler = $this->make('restful.handlers.document');
         } else {
             $handler = $this->make('restful.handlers.collection');
         }
+
         if ($handler instanceof IRepositoryAware) {
             $handler->setRepository($this->getRepository());
         }
@@ -104,6 +117,20 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
         );
 
         return $validator;
+    }
+
+    /**
+     * @return \App\Restful\IRepository
+     */
+    public function getRepository()
+    {
+        if (!$this->repository) {
+            if ($this->resourceClass) {
+                $this->repository = $this->make('restful.repository', [$this->resourceClass]);
+            }
+        }
+
+        return $this->repository;
     }
 
     /**

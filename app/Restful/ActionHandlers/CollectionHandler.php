@@ -16,7 +16,6 @@ use Illuminate\Http\Response;
 
 class CollectionHandler extends ActionHandler implements IRepositoryAware
 {
-
     use RepositoryAwareTrait;
 
     /**
@@ -26,7 +25,9 @@ class CollectionHandler extends ActionHandler implements IRepositoryAware
      */
     protected function get(RestfulRequest $request)
     {
-        $data = $this->getRepository()->queryWithParams($request->input->all());
+        $data = $this->getRepository()->findByParams(
+            $request->input, $request->page, $request->perPage
+        );
 
         return $this->actionResultBuilder()->setData($data)
             ->build();
@@ -53,7 +54,7 @@ class CollectionHandler extends ActionHandler implements IRepositoryAware
      */
     protected function delete(RestfulRequest $request)
     {
-        $this->getRepository()->removeWithParams($request->input->all());
+        $this->getRepository()->removeByParams($request->input);
 
         return $this->actionResultBuilder()->setStatusCode(Response::HTTP_NO_CONTENT)
             ->build();

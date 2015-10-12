@@ -9,7 +9,9 @@ namespace App\Restful;
 
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use App\Restful\Formatters\JsonFormatter;
+use App\Restful\Repositories\ModelRepository;
 use App\Restful\ActionHandlers;
+
 
 class ServiceProvider extends BaseServiceProvider
 {
@@ -20,8 +22,12 @@ class ServiceProvider extends BaseServiceProvider
      */
     public function register()
     {
-        $this->app->singleton(IFormatter::class, function() {
+        $this->app->singleton('restful.formatter', function() {
             return new JsonFormatter();
+        });
+
+        $this->app->bind('restful.repository', function ($app, $params) {
+            return new ModelRepository($params[0]);
         });
 
         $this->app->singleton('restful.handlers.document', function() {

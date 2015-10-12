@@ -37,6 +37,6 @@ class RestfulRequest
     /**
      * @var int
      */
-    public $pageSize;
+    public $perPage;
 
 }

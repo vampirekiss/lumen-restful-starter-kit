@@ -3,20 +3,15 @@
 namespace App\Http\Api\User;
 
 use App\Restful\ApiController;
+use App\Models\User\User;
 
-class User extends ApiController
+
+class Users extends ApiController
 {
     /**
-     * User constructor.
-     *
-     * @param \App\Http\Api\User\UserRepository $repository
-     *
-     * @return User
+     * @var string
      */
-    public function __construct(UserRepository $repository)
-    {
-        $this->repository = $repository;
-    }
+    protected $resourceClass = User::class;
 
     /**
      * @return array
@@ -27,6 +22,8 @@ class User extends ApiController
             'cellphone' => 'required|unique:users|max:11',
             'password' => 'required|min:4|max:32'
         ];
+
     }
+
 
 }

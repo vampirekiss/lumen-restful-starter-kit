@@ -6,25 +6,29 @@
  */
 
 namespace App\Restful;
+use Symfony\Component\HttpFoundation\ParameterBag;
 
+/**
+ * resource repository interface
+ */
 interface IRepository
 {
 
     /**
-     * @param Filter[] $filters
+     * finds resources by params
      *
-     * @return array
+     * @param \Symfony\Component\HttpFoundation\ParameterBag $params
+     * @param int      $page
+     * @param int      $perPage
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function query($filters);
+    public function findByParams(ParameterBag $params, $page = null, $perPage = null);
+
 
     /**
-     * @param array $params
+     * create new resource
      *
-     * @return array
-     */
-    public function queryWithParams(array $params);
-
-    /**
      * @param array $input
      * @param mixed $id
      *
@@ -33,6 +37,8 @@ interface IRepository
     public function create($input, $id = null);
 
     /**
+     * retrieve a resource by id
+     *
      * @param mixed $id
      *
      * @return mixed
@@ -40,6 +46,8 @@ interface IRepository
     public function retrieve($id);
 
     /**
+     * update a resource by id
+     *
      * @param mixed $id
      * @param array $input
      *
@@ -48,17 +56,21 @@ interface IRepository
     public function update($id, $input);
 
     /**
-     * @param Filter[] $filters
+     * remove resources by params
+     *
+     * @param \Symfony\Component\HttpFoundation\ParameterBag $params
      *
      * @return int
      */
-    public function remove($filters);
+    public function removeByParams(ParameterBag $params);
 
     /**
-     * @param array $params
+     * set query delegate
      *
-     * @return int
+     * @param callable $delegate
+     *
+     * @return void
      */
-    public function removeWithParams(array $params);
+    public function setQueryDelegate($delegate);
 
 }

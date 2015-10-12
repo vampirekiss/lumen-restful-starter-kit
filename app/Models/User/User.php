@@ -22,4 +22,5 @@ class User extends Model
      */
     protected $hidden = ['password', 'salt'];
 
+    public $cellphone;
 }

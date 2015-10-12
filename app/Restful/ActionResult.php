@@ -33,7 +33,7 @@ class ActionResult
     /**
      * response data
      *
-     * @var array
+     * @var mixed
      */
     public $data = null;
 

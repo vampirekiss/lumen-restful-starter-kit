@@ -7,6 +7,7 @@
 
 namespace App\Restful\Formatters;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Restful\ActionResult;
@@ -31,6 +32,16 @@ class JsonFormatter implements IFormatter
             $input = $request->query;
         }
 
+        if ($input->has('per-page')) {
+            $restfulRequest->perPage = intval($input->get('per-page'));
+            $input->remove('per-page');
+        }
+
+        if ($input->has('page')) {
+            $restfulRequest->page = intval($input->get('page'));
+            $input->remove('page');
+        }
+
         $restfulRequest->method = $request->getMethod();
         $restfulRequest->input = $input;
 
@@ -51,9 +62,11 @@ class JsonFormatter implements IFormatter
     {
         $message = $result->message ? $result->message : Response::$statusTexts[$result->statusCode];
 
+        $data = $this->_morphToArray($result->data);
+
         $json = [
-            'code' => $result->statusCode,
-            'data' => $result->data,
+            'code'    => $result->statusCode,
+            'data'    => $data,
             'message' => $message,
         ];
 
@@ -62,4 +75,18 @@ class JsonFormatter implements IFormatter
         return $factory->make($json, $result->statusCode, $result->headers);
     }
 
+    /**
+     * @param mixed $data data
+     *
+     * @return array
+     */
+    private function _morphToArray($data)
+    {
+        if ($data instanceof Arrayable) {
+            return $data->toArray();
+        } elseif ($data instanceof \JsonSerializable) {
+            return $data->jsonSerialize();
+        }
+        return $data;
+    }
 }

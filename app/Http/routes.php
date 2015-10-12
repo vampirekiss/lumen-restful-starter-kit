@@ -16,12 +16,12 @@ use Laravel\Lumen\Application;
 $app->group(['prefix' => 'api/v1'], function (Application $app) {
 
     $routeRules = [
-        'User.User' => '/users'
+        'User.Users' => '/users'
     ];
 
     foreach ($routeRules as $handler => $uri) {
         $handlerClass = str_replace('.', '\\', sprintf('App.Http.Api.%s', $handler));
-        foreach ($handlerClass::$availableMethods as $method) {
+        foreach (['GET', 'POST', 'PUT', 'PATCH', 'HEAD', 'DELETE'] as $method) {
             $action = sprintf('%s@handleRequest', $handlerClass);
             $app->addRoute($method, $uri, $action);
             $app->addRoute($method, $uri . '/{id}', $action);
