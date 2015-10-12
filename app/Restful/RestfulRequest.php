@@ -7,9 +7,7 @@
 
 namespace App\Restful;
 
-use Symfony\Component\HttpFoundation\ParameterBag;
-
-class Request
+class RestfulRequest
 {
     /**
      * @var string
@@ -17,7 +15,7 @@ class Request
     public $method;
 
     /**
-     * @var ParameterBag
+     * @var \Symfony\Component\HttpFoundation\ParameterBag
      */
     public $input;
 

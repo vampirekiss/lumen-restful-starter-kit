@@ -2,15 +2,10 @@
 
 namespace App\Http\Api\User;
 
-use App\Http\Api\Handler;
+use App\Restful\ApiController;
 
-class User extends Handler
+class User extends ApiController
 {
-    /**
-     * @var \App\Http\Api\User\UserRepository
-     */
-    protected $repository;
-
     /**
      * User constructor.
      *
@@ -24,14 +19,6 @@ class User extends Handler
     }
 
     /**
-     * @return \App\Models\Repository
-     */
-    protected function getRepository()
-    {
-        return $this->repository;
-    }
-
-    /**
      * @return array
      */
     protected function getValidationRules()
@@ -41,6 +28,5 @@ class User extends Handler
             'password' => 'required|min:4|max:32'
         ];
     }
-
 
 }

@@ -9,8 +9,9 @@ namespace App\Http\Api;
 
 use App\Models\Model;
 use App\Restful\Filter;
+use App\Restful\IRepository;
 
-class Repository implements \App\Restful\Repository
+class Repository implements IRepository
 {
     /**
      * model class

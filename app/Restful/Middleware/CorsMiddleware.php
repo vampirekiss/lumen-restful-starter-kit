@@ -7,7 +7,7 @@
 
 namespace App\Restful\Services;
 
-class CrosManager
+class CorsMiddleware
 {
     /**
      * @var array

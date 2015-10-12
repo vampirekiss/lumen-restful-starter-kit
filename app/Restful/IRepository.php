@@ -7,7 +7,7 @@
 
 namespace App\Restful;
 
-interface Repository
+interface IRepository
 {
 
     /**
