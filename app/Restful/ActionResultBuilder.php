@@ -59,24 +59,13 @@ class ActionResultBuilder
     }
 
     /**
-     * @param \Exception $e
-     *
-     * @return $this
-     */
-    public function setException(\Exception $e)
-    {
-        $this->_result->exception = $e;
-        return $this;
-    }
-
-    /**
      * @param mixed $data
      *
      * @return $this
      */
-    public function setData($data)
+    public function setResource($data)
     {
-        $this->_result->data = $data;
+        $this->_result->resource = $data;
         return $this;
     }
 

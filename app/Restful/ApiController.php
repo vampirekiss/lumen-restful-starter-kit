@@ -53,17 +53,23 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
             return $this->actionResultBuilder()->setStatusCode(Response::HTTP_NOT_FOUND)->build();
         }
 
-        $validator = $this->validateRequest($restfulRequest);
-        if ($validator && $validator->fails()) {
-            $actionResult = $this->actionResultBuilder()->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY)
-                ->setMessages($validator->getMessageBag()->all())
-                ->build();
-        } else {
-            if ($this->autoStartTransaction) {
+        $actionResult = null;
+
+        if ($actionHandler->shouldValidateRequest($restfulRequest)) {
+            $validator = $this->validateRequest($restfulRequest);
+            if ($validator && $validator->fails()) {
+                $actionResult = $this->actionResultBuilder()->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY)
+                    ->setMessages($validator->getMessageBag()->all())
+                    ->build();
+            }
+        }
+
+        if ($actionResult === null) {
+            if ($this->autoStartTransaction && in_array($request->getMethod(), self::$writeMethods)) {
                 /** @var \Illuminate\Database\Connection $db */
                 $db = $this->make('db');
                 $actionResult = $db->transaction(function () use ($actionHandler, $restfulRequest) {
-                     return $actionHandler->handle($restfulRequest);
+                    return $actionHandler->handle($restfulRequest);
                 });
             } else {
                 $actionResult = $actionHandler->handle($restfulRequest);
@@ -74,7 +80,7 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
     }
 
     /**
-     * query action handle
+     * query action handler
      *
      * @param \App\Restful\RestfulRequest $restfulRequest
      *
@@ -111,9 +117,23 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
             return null;
         }
 
+
+        $validationRules = [];
+
+        foreach ($rules as $key => $values) {
+            $methods = explode('|', $key);
+            if (in_array($restfulRequest->method, $methods)) {
+                $validationRules = array_merge($validationRules, $values);
+            }
+        }
+
+        if (empty($validationRules)) {
+            return null;
+        }
+
         /** @var \Illuminate\Validation\Validator $validator */
         $validator = $this->getValidationFactory()->make(
-            $restfulRequest->input->all(), $rules, $this->getCustomValidationMessages()
+            $restfulRequest->input->all(), $validationRules, $this->getCustomValidationMessages()
         );
 
         return $validator;

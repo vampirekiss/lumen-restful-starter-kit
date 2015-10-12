@@ -8,6 +8,7 @@
 namespace App\Restful\Repositories;
 
 use App\Restful\IRepository;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\ParameterBag;
 
 class ModelRepository implements IRepository
@@ -35,41 +36,59 @@ class ModelRepository implements IRepository
     }
 
     /**
-     * @param string $method
-     * @param array  $params
-     *
-     * @return mixed
-     */
-    private function _call($method, $params = [])
-    {
-        $callable = [$this->modelClass, $method];
-        return call_user_func_array($callable, $params);
-    }
-
-    /**
      * @param \Symfony\Component\HttpFoundation\ParameterBag $params
      * @param int                                            $page
      * @param int                                            $perPage
      *
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator|mixed
+     * @return array
      */
-    public function findByParams(ParameterBag $params, $page = null, $perPage = null)
+    public function paginateByParams(ParameterBag $params, $page = null, $perPage = null)
     {
-        /** @var \Illuminate\Database\Eloquent\Builder $query */
-        $query = $this->_call('query');
+        $query = $this->_query();
 
         if ($this->queryDelegate) {
-            return call_user_func_array($this->queryDelegate, [$query, $params]);
-        }
-
-        foreach ($params as $name => $value) {
-            $query->where($name, '=', $value);
+            $query = call_user_func_array($this->queryDelegate, [$query, $params]);
+        } else {
+            foreach ($params as $name => $value) {
+                if ($this->hasColumn($name)) {
+                    $query->where($name, '=', $value);
+                }
+            }
         }
 
         !$perPage && $perPage = intval(env('RESTFUL_PER_PAGE', 40));
         !$page && $page = 1;
 
-        return $query->paginate($perPage, ['*'], 'page', $page);
+        /** @var \Illuminate\Pagination\LengthAwarePaginator $paginator */
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+        $array = $paginator->toArray();
+
+        return [
+            'total'         => $array['total'],
+            'per_page'      => $array['per_page'],
+            'next_page_ur'  => $array['next_page_url'] ?: '',
+            'prev_page_url' => $array['prev_page_url'] ?: '',
+            'current_page'  => $array['current_page'],
+            'last_page'     => max($array['last_page'], 1),
+            'list'          => $array['data']
+        ];
+    }
+
+    /**
+     * remove a resource by id
+     *
+     * @param mixed $id
+     *
+     * @return bool
+     */
+    public function remove($id)
+    {
+        $id = intval($id);
+        if ($id <= 0) {
+            return false;
+        }
+
+        return $this->_query()->getQuery()->delete($id) > 0;
     }
 
     /**
@@ -83,48 +102,56 @@ class ModelRepository implements IRepository
             return 0;
         }
 
-        /** @var \Illuminate\Database\Eloquent\Builder $query */
-        $query = $this->_call('query');
-
-        if ($this->queryDelegate) {
-            return call_user_func_array($this->queryDelegate, [$query, $params]);
-        }
+        $query = $this->_query();
 
         $hasSetCondition = false;
-        foreach ($params as $name => $value) {
-            if (!empty($name)) {
-                $query->where($name, '=', $value);
-                $hasSetCondition = true;
+
+        if ($this->queryDelegate) {
+            $query = call_user_func_array($this->queryDelegate, [$query, $params]);
+            $hasSetCondition = true;
+        } else {
+            foreach ($params as $name => $value) {
+                if (!empty($name) && $this->hasColumn($name)) {
+                    $query->where($name, '=', $value);
+                    $hasSetCondition = true;
+                }
             }
         }
 
         return $hasSetCondition ? $query->delete() : 0;
     }
 
-
     /**
      * @param array $input
-     * @param mixed $id
+     * @param int   $id
      *
      * @return \Illuminate\Database\Eloquent\Model
      */
     public function create($input, $id = null)
     {
-        if ($id !== null) {
-            $input['id'] = $id;
-        }
         /** @var \Illuminate\Database\Eloquent\Model $model */
-        $model = $this->_call('create', [$input, $id !== null]);
+        if ($id === null) {
+            $model = $this->_call('create', [$input]);
+        } else {
+            $model = new $this->modelClass($input);
+            $model->setAttribute('id', $id);
+            $model->save();
+        }
+
         return $model;
     }
 
     /**
      * @param mixed $id
      *
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return \Illuminate\Database\Eloquent\Model|null
      */
     public function retrieve($id)
     {
+        $id = intval($id);
+        if (!$id) {
+            return null;
+        }
         return $this->_call('find', [$id]);
     }
 
@@ -132,7 +159,7 @@ class ModelRepository implements IRepository
      * @param mixed $id
      * @param array $input
      *
-     * @return mixed
+     * @return \Illuminate\Database\Eloquent\Model|null
      */
     public function update($id, $input)
     {
@@ -151,6 +178,28 @@ class ModelRepository implements IRepository
     }
 
     /**
+     * replace a resource by id
+     *
+     * @param mixed $id
+     * @param array $input
+     *
+     * @return \Illuminate\Database\Eloquent\Model|null
+     */
+    public function replace($id, $input)
+    {
+        $model = $this->retrieve($id);
+
+        if (!$model) {
+            if (($id = intval($id)) > 0) {
+                return $this->create($input, $id);
+            }
+            return null;
+        }
+
+        return $this->update($id, $input);
+    }
+
+    /**
      * @param callable $delegate
      *
      * @return void
@@ -159,5 +208,62 @@ class ModelRepository implements IRepository
     {
         $this->queryDelegate = $delegate;
     }
+
+    /**
+     * @param string $method
+     * @param array  $params
+     *
+     * @return mixed
+     */
+    private function _call($method, $params = [])
+    {
+        $callable = [$this->modelClass, $method];
+        return call_user_func_array($callable, $params);
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    private function _query()
+    {
+        return $this->_call('query');
+    }
+
+    /**
+     * get model table columns
+     *
+     * @return mixed
+     */
+    protected function getColumns()
+    {
+        static $columns = [];
+
+        if (!isset($columns[$this->modelClass])) {
+            /** @var \Illuminate\Database\Connection $connection */
+            $connection = $this->_query()->getQuery()->getConnection();
+            $columns[$this->modelClass] = $connection->getSchemaBuilder()->getColumnListing(
+                str_replace('\\', '', Str::snake(Str::plural(class_basename($this->modelClass))))
+            );
+        }
+
+        return $columns[$this->modelClass];
+    }
+
+    /**
+     * @param string $column
+     *
+     * @return bool
+     */
+    protected function hasColumn($column)
+    {
+        foreach ($this->getColumns() as $col) {
+            if (strtolower($column) == strtolower($col)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
 }

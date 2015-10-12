@@ -15,15 +15,15 @@ interface IRepository
 {
 
     /**
-     * finds resources by params
+     * paginate resources by params
      *
      * @param \Symfony\Component\HttpFoundation\ParameterBag $params
      * @param int      $page
      * @param int      $perPage
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return mixed
      */
-    public function findByParams(ParameterBag $params, $page = null, $perPage = null);
+    public function paginateByParams(ParameterBag $params, $page = null, $perPage = null);
 
 
     /**
@@ -56,6 +56,25 @@ interface IRepository
     public function update($id, $input);
 
     /**
+     * replace a resource by id
+     *
+     * @param mixed $id
+     * @param array $input
+     *
+     * @return mixed
+     */
+    public function replace($id, $input);
+
+    /**
+     * remove a resource by id
+     *
+     * @param mixed $id
+     *
+     * @return bool
+     */
+    public function remove($id);
+
+    /**
      * remove resources by params
      *
      * @param \Symfony\Component\HttpFoundation\ParameterBag $params
@@ -72,5 +91,6 @@ interface IRepository
      * @return void
      */
     public function setQueryDelegate($delegate);
+
 
 }

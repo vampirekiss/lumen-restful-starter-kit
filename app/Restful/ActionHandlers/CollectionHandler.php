@@ -19,17 +19,31 @@ class CollectionHandler extends ActionHandler implements IRepositoryAware
     use RepositoryAwareTrait;
 
     /**
+     * should validate request
+     *
+     * @param \App\Restful\RestfulRequest $request
+     *
+     * @return bool
+     */
+    public function shouldValidateRequest(RestfulRequest $request)
+    {
+        return in_array($request->method, ['POST']);
+    }
+
+
+    /**
      * @param \App\Restful\RestfulRequest $request
      *
      * @return \App\Restful\ActionResult
      */
     protected function get(RestfulRequest $request)
     {
-        $data = $this->getRepository()->findByParams(
+        $resource = $this->getRepository()->paginateByParams(
             $request->input, $request->page, $request->perPage
         );
 
-        return $this->actionResultBuilder()->setData($data)
+        return $this->actionResultBuilder()
+            ->setResource($resource)
             ->build();
     }
 
@@ -40,10 +54,11 @@ class CollectionHandler extends ActionHandler implements IRepositoryAware
      */
     protected function post(RestfulRequest $request)
     {
-        $data = $this->getRepository()->create($request->input->all());
+        $resource = $this->getRepository()->create($request->input->all());
 
-        return $this->actionResultBuilder()->setStatusCode(Response::HTTP_CREATED)
-            ->setData($data)
+        return $this->actionResultBuilder()
+            ->setStatusCode(Response::HTTP_CREATED)
+            ->setResource($resource)
             ->build();
     }
 
@@ -56,7 +71,8 @@ class CollectionHandler extends ActionHandler implements IRepositoryAware
     {
         $this->getRepository()->removeByParams($request->input);
 
-        return $this->actionResultBuilder()->setStatusCode(Response::HTTP_NO_CONTENT)
+        return $this->actionResultBuilder()
+            ->setStatusCode(Response::HTTP_NO_CONTENT)
             ->build();
     }
 

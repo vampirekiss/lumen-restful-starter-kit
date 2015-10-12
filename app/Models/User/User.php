@@ -22,5 +22,39 @@ class User extends Model
      */
     protected $hidden = ['password', 'salt'];
 
-    public $cellphone;
+    /**
+     * handle event
+     *
+     * @param string $event
+     *
+     * @return bool
+     */
+    protected function handleEvent($event)
+    {
+        if ($event == self::EVENT_CREATING) {
+            $this->setAttribute('salt', $salt = $this->_makeSalt());
+            $this->setAttribute('password', $this->_makePassword($salt));
+        }
+
+        return parent::handleEvent($event);
+    }
+
+    /**
+     * @return string
+     */
+    private function _makeSalt()
+    {
+        return substr(uniqid(), 0, 10);
+    }
+
+    /**
+     * @param $salt
+     *
+     * @return string
+     */
+    private function _makePassword($salt)
+    {
+        return sha1($salt . $this->getAttribute('password') . $salt);
+    }
+
 }

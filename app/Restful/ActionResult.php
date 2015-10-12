@@ -31,16 +31,10 @@ class ActionResult
     public $message = null;
 
     /**
-     * response data
+     * resource
      *
      * @var mixed
      */
-    public $data = null;
-
-
-    /**
-     * @var \Exception
-     */
-    public $exception = null;
+    public $resource = null;
 
 }

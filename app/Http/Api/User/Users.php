@@ -18,11 +18,22 @@ class Users extends ApiController
      */
     protected function getValidationRules()
     {
+        // todo: implements this patterns
         return [
-            'cellphone' => 'required|unique:users|max:11',
-            'password' => 'required|min:4|max:32'
+            'POST|PUT' => [
+                'cellphone' => 'required|min:11|max:11',
+                'password' => 'required|min:4|max:32'
+            ],
+            'POST' => [
+                'cellphone' => 'unique:users'
+            ],
+            'PUT' => [
+                'cellphone' => 'other-unique:users' // replace, do not check self
+            ],
+            'PATCH' => [
+                'level_id' => 'required'
+            ]
         ];
-
     }
 
 

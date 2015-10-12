@@ -17,6 +17,12 @@ use App\Restful\RestfulRequest;
 
 class JsonFormatter implements IFormatter
 {
+
+    /**
+     * @var \App\Restful\RestfulRequest
+     */
+    private $_currentRestfulRequest;
+
     /**
      * @param \Illuminate\Http\Request $request
      *
@@ -24,33 +30,8 @@ class JsonFormatter implements IFormatter
      */
     public function formatRequest(Request $request)
     {
-        $restfulRequest = new RestfulRequest();
-
-        if (in_array($request->getMethod(), ['POST', 'PATCH', 'PUT'])) {
-            $input = $request->json();
-        } else {
-            $input = $request->query;
-        }
-
-        if ($input->has('per-page')) {
-            $restfulRequest->perPage = intval($input->get('per-page'));
-            $input->remove('per-page');
-        }
-
-        if ($input->has('page')) {
-            $restfulRequest->page = intval($input->get('page'));
-            $input->remove('page');
-        }
-
-        $restfulRequest->method = $request->getMethod();
-        $restfulRequest->input = $input;
-
-        $params = $request->route()[2];
-        if (isset($params['id'])) {
-            $restfulRequest->resourceId = $params['id'];
-        }
-
-        return $restfulRequest;
+        $this->_currentRestfulRequest = RestfulRequest::createFromRequest($request);
+        return $this->_currentRestfulRequest;
     }
 
     /**
@@ -62,31 +43,44 @@ class JsonFormatter implements IFormatter
     {
         $message = $result->message ? $result->message : Response::$statusTexts[$result->statusCode];
 
-        $data = $this->_morphToArray($result->data);
-
-        $json = [
+        $value = [
             'code'    => $result->statusCode,
-            'data'    => $data,
+            'data'    => $this->_morphToArray($result->resource),
             'message' => $message,
         ];
 
-        /** @var \Laravel\Lumen\Http\ResponseFactory $factory */
-        $factory = response();
-        return $factory->make($json, $result->statusCode, $result->headers);
+        $headers = array_merge(
+            $result->headers, ['Content-Type' => 'application/json; charset=utf-8']
+        );
+
+        $response = Response::create(json_encode($value), $result->statusCode, $headers);
+
+        return $response;
     }
 
     /**
-     * @param mixed $data data
+     * @param mixed $resource
      *
-     * @return array
+     * @return mixed
      */
-    private function _morphToArray($data)
+    private function _morphToArray($resource)
     {
-        if ($data instanceof Arrayable) {
-            return $data->toArray();
-        } elseif ($data instanceof \JsonSerializable) {
-            return $data->jsonSerialize();
+        $array = call_user_func(function() use ($resource) {
+            if (is_array($resource)) {
+                return $resource;
+            } elseif ($resource instanceof Arrayable) {
+                return $resource->toArray();
+            } elseif ($resource instanceof \JsonSerializable) {
+                return $resource->jsonSerialize();
+            }
+            return $resource;
+        });
+
+        if (!is_array($array)) {
+            return $resource;
         }
-        return $data;
+
+        return $array;
     }
+
 }
