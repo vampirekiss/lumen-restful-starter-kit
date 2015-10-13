@@ -2,35 +2,16 @@
 
 namespace DummyNamespace;
 
-use App\Http\Api\Handler;
-use RepositoryClass;
+use App\Restful\ApiController;
+useModelClass
+
 
 class DummyClass extends Handler
 {
     /**
-     * @var \RepositoryClass
+     * @var string
      */
-    protected $repository;
-
-    /**
-     * DummyClass constructor.
-     *
-     * @param \RepositoryClass $repository
-     *
-     * @return DummyClass
-     */
-    public function __construct(ShortRepositoryClass $repository)
-    {
-        $this->repository = $repository;
-    }
-
-    /**
-     * @return \RepositoryClass
-     */
-    protected function getRepository()
-    {
-        return $this->repository;
-    }
+    protected $resourceClass = ShortModelClass::class;
 
    /**
      * @return array

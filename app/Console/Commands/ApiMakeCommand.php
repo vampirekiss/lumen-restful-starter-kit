@@ -49,11 +49,10 @@ class ApiMakeCommand extends GeneratorCommand
     public function fire()
     {
         if (parent::fire() !== false) {
-            if ($this->option('repository')) {
+            if ($this->option('model')) {
                 $this->call('make:model', ['name' => $this->argument('name')]);
                 $table = str_replace('._', '_', Str::plural(Str::snake(class_basename($this->argument('name')))));
                 $this->call('make:migration', ['name' => "create_{$table}_table", '--create' => $table]);
-                $this->call('make:repository', ['name' => $this->argument('name')]);
             }
         }
     }
@@ -73,6 +72,8 @@ class ApiMakeCommand extends GeneratorCommand
         if ($this->option('repository')) {
             $stub = $this->replaceRepositoryClass($stub, $name);
         }
+
+        var_dump($stub); exit;
 
         return $stub;
     }
@@ -114,7 +115,7 @@ class ApiMakeCommand extends GeneratorCommand
     protected function getOptions()
     {
         return [
-            ['repository', 'r', InputOption::VALUE_NONE, 'Create a new repository file for the api.']
+            ['model', 'm', InputOption::VALUE_NONE, 'Create a new model file for the api.']
         ];
     }
 
