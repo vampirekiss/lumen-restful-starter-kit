@@ -33,6 +33,7 @@ class ActionResultBuilder
         foreach ($headers as $key => $value) {
             $this->setHeader($key, $value);
         }
+        return $this;
     }
 
     /**

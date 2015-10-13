@@ -9,6 +9,10 @@ namespace App\Restful;
 
 use Illuminate\Http\Request;
 
+
+/**
+ * format http request and http response
+ */
 interface IFormatter
 {
     /**

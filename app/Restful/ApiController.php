@@ -10,8 +10,12 @@ namespace App\Restful;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Laravel\Lumen\Routing\Controller;
+use App\Restful\Exceptions\RestfulException;
 
-class ApiController extends Controller implements IHttpHandler, IRepositoryAware
+/**
+ * Restful api controller
+ */
+abstract class ApiController extends Controller implements IHttpHandler, IRepositoryAware
 {
     use ActionResultBuilderTrait, RepositoryAwareTrait;
 
@@ -37,25 +41,49 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
      *
      * @param Request $request
      *
+     * @throws \Exception
      * @return \Illuminate\Http\Response
-     * @throws \ErrorException
      */
     public function handleRequest(Request $request)
     {
         /** @var IFormatter $formatter */
         $formatter = $this->make('restful.formatter');
 
-        $restfulRequest = $formatter->formatRequest($request);
+        try {
+            $actionResult = $this->dispatchRequest($formatter, $request);
+        } catch (\Exception $e) {
+            if ($e instanceof RestfulException) {
+                $actionResult = $e->toActionResult();
+            } else {
+                throw $e;
+            }
+        }
 
+        return $formatter->formatActionResult($actionResult);
+    }
+
+    /**
+     * dispatch restful request to action handler
+     *
+     * @param \App\Restful\IFormatter  $formatter
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return \App\Restful\ActionResult
+     */
+    protected function dispatchRequest($formatter, $request)
+    {
+        $restfulRequest = $formatter->formatRequest($request);
         $actionHandler = $this->queryActionHandler($restfulRequest);
 
         if (!$actionHandler) {
-            return $this->actionResultBuilder()->setStatusCode(Response::HTTP_NOT_FOUND)->build();
+            return $this->actionResultBuilder()
+                ->setStatusCode(Response::HTTP_NOT_FOUND)
+                ->build();
         }
 
         $actionResult = null;
 
-        if ($actionHandler->shouldValidateRequest($restfulRequest)) {
+        if ($actionHandler instanceof IActionHandler && $actionHandler->shouldValidateRequest($restfulRequest)) {
             $validator = $this->validateRequest($restfulRequest);
             if ($validator && $validator->fails()) {
                 $actionResult = $this->actionResultBuilder()->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY)
@@ -65,18 +93,25 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
         }
 
         if ($actionResult === null) {
-            if ($this->autoStartTransaction && in_array($request->getMethod(), self::$writeMethods)) {
+            $handle = function () use ($actionHandler, $restfulRequest) {
+                if (is_callable($actionHandler)) {
+                    return $actionHandler($restfulRequest);
+                }
+
+                return $actionHandler->handle($restfulRequest);
+            };
+            if ($this->autoStartTransaction && in_array($restfulRequest->method, self::$writeMethods)) {
                 /** @var \Illuminate\Database\Connection $db */
                 $db = $this->make('db');
-                $actionResult = $db->transaction(function () use ($actionHandler, $restfulRequest) {
-                    return $actionHandler->handle($restfulRequest);
+                $actionResult = $db->transaction(function () use ($handle, $restfulRequest) {
+                    return $handle($restfulRequest);
                 });
             } else {
-                $actionResult = $actionHandler->handle($restfulRequest);
+                $actionResult = $handle($restfulRequest);
             }
         }
 
-        return $formatter->formatActionResult($actionResult);
+        return $actionResult;
     }
 
     /**
@@ -84,24 +119,62 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
      *
      * @param \App\Restful\RestfulRequest $restfulRequest
      *
-     * @return IActionHandler
+     * @return \App\Restful\IActionHandler|callable
      */
     protected function queryActionHandler(RestfulRequest $restfulRequest)
     {
         /** @var IActionHandler|IRepositoryAware $handler */
         $handler = null;
 
-        if ($restfulRequest->resourceId) {
-            $handler = $this->make('restful.handlers.document');
-        } else {
-            $handler = $this->make('restful.handlers.collection');
-        }
+        if ($this->resourceClass != null) {
+            if ($restfulRequest->resourceId > 0) {
+                $handler = $this->make('restful.handlers.document');
+            } elseif ($restfulRequest->resourceId === 0) {
+                $handler = $this->make('restful.handlers.collection');
+            } else {
+                return function() {
+                    return $this->actionResultBuilder()->setStatusCode(Response::HTTP_NOT_FOUND)
+                        ->build();
+                };
+            }
 
-        if ($handler instanceof IRepositoryAware) {
-            $handler->setRepository($this->getRepository());
+            if ($handler instanceof IRepositoryAware) {
+                $handler->setRepository($this->getRepository());
+            }
+        } else {
+            $handler = [$this, 'doAction'];
         }
 
         return $handler;
+    }
+
+    /**
+     * @param string                      $method
+     * @param \App\Restful\RestfulRequest $restfulRequest
+     * @param array                       $rules
+     * @param callable                    $callback
+     *
+     * @return \App\Restful\ActionResult
+     */
+    protected function actionValidatePassOrFail($method, RestfulRequest $restfulRequest, array $rules, $callback)
+    {
+        if ($method != $restfulRequest->method) {
+            return $this->actionResultBuilder()->setStatusCode(Response::HTTP_METHOD_NOT_ALLOWED)
+                ->build();
+        }
+
+        /** @var \Illuminate\Validation\Validator $validator */
+        $validator = $this->getValidationFactory()->make(
+            $restfulRequest->input->all(), $rules
+        );
+
+        if ($validator->fails()) {
+            return $this->actionResultBuilder()->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY)
+                ->setMessages($validator->getMessageBag()->all())
+                ->build();
+        }
+
+        return $callback($restfulRequest);
     }
 
     /**
@@ -111,19 +184,18 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
      */
     protected function validateRequest(RestfulRequest $restfulRequest)
     {
-        $rules = $this->getValidationRules();
+        $rules = $this->getValidationRules($restfulRequest);
 
         if (empty($rules) || in_array($restfulRequest->method, ['GET', 'DELETE', 'OPTIONS', 'HEAD'])) {
             return null;
         }
-
 
         $validationRules = [];
 
         foreach ($rules as $key => $values) {
             $methods = explode('|', $key);
             if (in_array($restfulRequest->method, $methods)) {
-                $validationRules = array_merge($validationRules, $values);
+                $validationRules = $this->_mergeValidationRules($validationRules, $rules[$key]);
             }
         }
 
@@ -131,12 +203,38 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
             return null;
         }
 
-        /** @var \Illuminate\Validation\Validator $validator */
-        $validator = $this->getValidationFactory()->make(
-            $restfulRequest->input->all(), $validationRules, $this->getCustomValidationMessages()
+        return $this->getValidationFactory()->make(
+            $restfulRequest->input->all(), $validationRules
         );
+    }
 
-        return $validator;
+    /**
+     * @param array $originRules
+     * @param array $mergeRules
+     *
+     * @return array
+     */
+    private function _mergeValidationRules(array $originRules, array $mergeRules)
+    {
+        foreach ($originRules as $key => $value) {
+            if (isset($mergeRules[$key])) {
+                $originRules[$key] = sprintf('%s|%s', $value, $mergeRules[$key]);
+                unset($mergeRules[$key]);
+            }
+        }
+
+        return array_merge($originRules, $mergeRules);
+    }
+
+    /**
+     * @param \App\Restful\RestfulRequest $request
+     *
+     * @return \App\Restful\ActionResult
+     */
+    protected function doAction(RestfulRequest $request)
+    {
+        return $this->actionResultBuilder()->setStatusCode(Response::HTTP_METHOD_NOT_ALLOWED)
+            ->build();
     }
 
     /**
@@ -154,17 +252,11 @@ class ApiController extends Controller implements IHttpHandler, IRepositoryAware
     }
 
     /**
+     * @param \App\Restful\RestfulRequest $request
+     *
      * @return array
      */
-    protected function getValidationRules()
-    {
-        return [];
-    }
-
-    /**
-     * @return array
-     */
-    protected function getCustomValidationMessages()
+    protected function getValidationRules($request)
     {
         return [];
     }

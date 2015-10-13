@@ -11,24 +11,17 @@
 |
 */
 
-use Laravel\Lumen\Application;
 
-$app->group(['prefix' => 'api/v1'], function (Application $app) {
+/** @var \App\Restful\RouteRuleBuilder $builder */
+$builder = $app->make('restful.route_ruler_builder');
 
-    $routeRules = [
-        'User.Users' => '/users'
-    ];
+$builder->setPrefix('api')->setVersion('v1')->setBaseNamespace('App.Http.Api');
 
-    foreach ($routeRules as $handler => $uri) {
-        $handlerClass = str_replace('.', '\\', sprintf('App.Http.Api.%s', $handler));
-        foreach (['GET', 'POST', 'PUT', 'PATCH', 'HEAD', 'DELETE'] as $method) {
-            $action = sprintf('%s@handleRequest', $handlerClass);
-            $app->addRoute($method, $uri, $action);
-            $app->addRoute($method, $uri . '/{id}', $action);
-        }
+$builder->mappingFromArray([
 
-    }
+    'User.Authentication' => '/users/auth',
+    'User.Users'          => '/users/{id?}'
 
-});
+]);
 
-
+$builder->buildToApp($app);

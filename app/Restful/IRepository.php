@@ -30,7 +30,7 @@ interface IRepository
      * create new resource
      *
      * @param array $input
-     * @param mixed $id
+     * @param int $id
      *
      * @return mixed
      */
@@ -39,7 +39,7 @@ interface IRepository
     /**
      * retrieve a resource by id
      *
-     * @param mixed $id
+     * @param int $id
      *
      * @return mixed
      */
@@ -48,7 +48,7 @@ interface IRepository
     /**
      * update a resource by id
      *
-     * @param mixed $id
+     * @param int $id
      * @param array $input
      *
      * @return mixed
@@ -58,7 +58,7 @@ interface IRepository
     /**
      * replace a resource by id
      *
-     * @param mixed $id
+     * @param int $id
      * @param array $input
      *
      * @return mixed
@@ -68,7 +68,7 @@ interface IRepository
     /**
      * remove a resource by id
      *
-     * @param mixed $id
+     * @param int $id
      *
      * @return bool
      */

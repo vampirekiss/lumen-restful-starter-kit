@@ -13,12 +13,14 @@ class Users extends ApiController
      */
     protected $resourceClass = User::class;
 
+
     /**
+     * @param \App\Restful\RestfulRequest $request
+     *
      * @return array
      */
-    protected function getValidationRules()
+    protected function getValidationRules($request)
     {
-        // todo: implements this patterns
         return [
             'POST|PUT' => [
                 'cellphone' => 'required|min:11|max:11',
@@ -28,13 +30,11 @@ class Users extends ApiController
                 'cellphone' => 'unique:users'
             ],
             'PUT' => [
-                'cellphone' => 'other-unique:users' // replace, do not check self
+                'cellphone' => 'unique_exclude:users,' . $request->resourceId
             ],
             'PATCH' => [
                 'level_id' => 'required'
             ]
         ];
     }
-
-
 }

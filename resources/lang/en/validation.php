@@ -85,6 +85,9 @@ return [
     |
     */
 
+    'unique_exclude' => 'The :attribute has already been taken.',
+
+
     'custom' => [
         'attribute-name' => [
             'rule-name' => 'custom-message',

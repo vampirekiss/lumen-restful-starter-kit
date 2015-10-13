@@ -11,10 +11,7 @@
 |
 */
 
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Log;
-
-$app = require __DIR__.'/../bootstrap/app.php';
+$app = require __DIR__ . '/../bootstrap/app.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -28,14 +25,10 @@ $app = require __DIR__.'/../bootstrap/app.php';
 |
 */
 
-/*
-$sqls = [];
-Event::listen('illuminate.query', function($sql) use (&$sqls)
-{
-    $sqls[] = $sql;
-});
-*/
+//$sqls = [];
+//\Illuminate\Support\Facades\Event::listen('illuminate.query', function ($sql) use (&$sqls) {
+//    $sqls[] = $sql;
+//});
 
 $app->run();
-
 

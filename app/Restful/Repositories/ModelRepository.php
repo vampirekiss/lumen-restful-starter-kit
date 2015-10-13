@@ -77,13 +77,12 @@ class ModelRepository implements IRepository
     /**
      * remove a resource by id
      *
-     * @param mixed $id
+     * @param int $id
      *
      * @return bool
      */
     public function remove($id)
     {
-        $id = intval($id);
         if ($id <= 0) {
             return false;
         }
@@ -138,25 +137,24 @@ class ModelRepository implements IRepository
             $model->save();
         }
 
-        return $model;
+        return $model->fresh();
     }
 
     /**
-     * @param mixed $id
+     * @param int $id
      *
      * @return \Illuminate\Database\Eloquent\Model|null
      */
     public function retrieve($id)
     {
-        $id = intval($id);
-        if (!$id) {
+        if ($id <= 0) {
             return null;
         }
         return $this->_call('find', [$id]);
     }
 
     /**
-     * @param mixed $id
+     * @param int $id
      * @param array $input
      *
      * @return \Illuminate\Database\Eloquent\Model|null
@@ -180,7 +178,7 @@ class ModelRepository implements IRepository
     /**
      * replace a resource by id
      *
-     * @param mixed $id
+     * @param int $id
      * @param array $input
      *
      * @return \Illuminate\Database\Eloquent\Model|null
@@ -190,7 +188,7 @@ class ModelRepository implements IRepository
         $model = $this->retrieve($id);
 
         if (!$model) {
-            if (($id = intval($id)) > 0) {
+            if ($id > 0) {
                 return $this->create($input, $id);
             }
             return null;

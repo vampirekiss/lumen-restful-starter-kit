@@ -29,7 +29,7 @@ class RestfulRequest
     /**
      * @var mixed
      */
-    public $resourceId;
+    public $resourceId = 0;
 
     /**
      * @var string
@@ -77,7 +77,8 @@ class RestfulRequest
 
         $params = $request->route()[2];
         if (isset($params['id'])) {
-            $instance->resourceId = $params['id'];
+            $id = intval($params['id']);
+            $instance->resourceId = $id > 0 ? $id : null;
         }
 
         return $instance;
