@@ -69,30 +69,17 @@ class ApiMakeCommand extends GeneratorCommand
     {
         $stub = parent::buildClass($name);
 
-        if ($this->option('repository')) {
-            $stub = $this->replaceRepositoryClass($stub, $name);
+        list($resourceStub, $actionStub) = explode('#split', $stub);
+
+        if ($this->option('model')) {
+            $modelClass = Str::singular(str_replace('.', '\\', $this->getNameInput()));
+            $resourceStub = str_replace(
+                ['DummyModelClass'], [$modelClass], $resourceStub
+            );
+            return trim($resourceStub);
         }
 
-        var_dump($stub); exit;
-
-        return $stub;
-    }
-
-    /**
-     * Replace the repository class for the given stub.
-     *
-     * @param  string $stub
-     * @param  string $name
-     *
-     * @return $this
-     */
-    protected function replaceRepositoryClass($stub, $name)
-    {
-        $repoClassName = str_replace('Http\\Api', 'Models', $name) . 'Repository';
-        $classParts = explode('\\', $repoClassName);
-        $shortRepoClassName = end($classParts);
-        $stub = str_replace('ShortRepositoryClass', $shortRepoClassName, $stub);
-        return str_replace('RepositoryClass', $repoClassName, $stub);
+        return trim($actionStub);
     }
 
     /**

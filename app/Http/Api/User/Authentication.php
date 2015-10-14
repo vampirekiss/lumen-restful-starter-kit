@@ -22,14 +22,14 @@ class Authentication extends ApiController
     protected function doAction(RestfulRequest $request)
     {
         $rules = [
-            'clientId' => 'required',
+            'client_id' => 'required',
             'account'  => 'required',
             'password' => 'required'
         ];
 
-        return $this->actionValidatePassOrFail('POST', $request, $rules, function () use ($request) {
+        return $this->actionValidatePassOrFail('GET', $request, $rules, function () use ($request) {
             list($clientId, $account, $password, $remember) = [
-                $request->input->get('clientId', ''),
+                $request->input->get('client_id', ''),
                 $request->input->get('account', ''),
                 $request->input->get('password', ''),
                 $request->input->getBoolean('remember', false)

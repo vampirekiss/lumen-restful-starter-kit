@@ -21,7 +21,7 @@ class JsonFormatter implements IFormatter
     /**
      * @var \App\Restful\RestfulRequest
      */
-    private $_currentRestfulRequest;
+    private $_restfulRequest;
 
     /**
      * @param \Illuminate\Http\Request $request
@@ -30,8 +30,10 @@ class JsonFormatter implements IFormatter
      */
     public function formatRequest(Request $request)
     {
-        $this->_currentRestfulRequest = RestfulRequest::createFromRequest($request);
-        return $this->_currentRestfulRequest;
+        if (!$this->_restfulRequest) {
+            $this->_restfulRequest = RestfulRequest::createFromRequest($request);
+        }
+        return $this->_restfulRequest;
     }
 
     /**
@@ -49,11 +51,19 @@ class JsonFormatter implements IFormatter
             'message' => $message,
         ];
 
-        $headers = array_merge(
-            $result->headers, ['Content-Type' => 'application/json; charset=utf-8']
-        );
+        $data = json_encode($value);
+        $headers = $result->headers;
+        $statusCode = $result->statusCode;
 
-        $response = Response::create(json_encode($value), $result->statusCode, $headers);
+        if ($this->_restfulRequest && $this->_restfulRequest->callback) {
+            $headers['Content-Type'] = 'application/javascript';
+            $statusCode = Response::HTTP_OK;
+            $data = sprintf('/**/%s(%s)', $this->_restfulRequest->callback, $data);
+        } else {
+            $headers['Content-Type'] = 'application/json';
+        }
+
+        $response = Response::create($data, $statusCode, $headers);
 
         return $response;
     }
@@ -65,7 +75,7 @@ class JsonFormatter implements IFormatter
      */
     private function _morphToArray($resource)
     {
-        $array = call_user_func(function() use ($resource) {
+        $array = call_user_func(function () use ($resource) {
             if (is_array($resource)) {
                 return $resource;
             } elseif ($resource instanceof Arrayable) {
@@ -73,6 +83,7 @@ class JsonFormatter implements IFormatter
             } elseif ($resource instanceof \JsonSerializable) {
                 return $resource->jsonSerialize();
             }
+
             return $resource;
         });
 

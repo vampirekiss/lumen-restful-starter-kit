@@ -6,5 +6,12 @@ use App\Models\Model;
 
 class DummyClass extends Model
 {
-    //
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'DummyTable';
+
+
 }

@@ -13,12 +13,12 @@ interface IHttpHandler
 {
 
     /**
-     * handle http request
+     * handle restful request
      *
      * @param \Illuminate\Http\Request $request
      *
-     * @return void
+     * @return \Illuminate\Http\Response
      */
-    public function handleRequest(Request $request);
+    public function handle(Request $request);
 
 }

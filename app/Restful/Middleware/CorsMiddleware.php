@@ -5,110 +5,48 @@
  * Copyright (c) 2015 vampirekiss. All rights reserved.
  */
 
-namespace App\Restful\Services;
+namespace App\Restful\Middleware;
+
+use Illuminate\Http\Response;
 
 class CorsMiddleware
 {
     /**
      * @var array
      */
-    private $_headers = [];
+    public static $corsHeaders = [
+        'Access-Control-Allow-Origin'      => '*',
+        'Access-Control-Allow-Headers'     => 'Authorization, Content-Type, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, X-GitHub-OTP, X-Requested-With',
+        'Access-Control-Allow-Methods'     => 'GET, HEAD, POST, PATCH, PUT, DELETE',
+        'Access-Control-Expose-Headers'    => 'ETag, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset',
+        'Access-Control-Max-Age'           => '86400',
+        'Access-Control-Allow-Credentials' => 'true'
+    ];
 
     /**
-     * @param $origin
+     * Handle an incoming request.
      *
-     * @return $this
-     */
-    public function allowOrigin($origin)
-    {
-        $this->_headers['Access-Control-Allow-Origin'] = $origin;
-        return $this;
-    }
-
-    /**
-     * @param array $headers
+     * @param  \Illuminate\Http\Request $request
+     * @param  \Closure                 $next
      *
-     * @return $this
+     * @return \Illuminate\Http\Response
      */
-    public function allowHeaders(array $headers)
+    public function handle($request, \Closure $next)
     {
-        $this->_headers['Access-Control-Allow-Headers'] = $this->_arrayHeaderValue($headers);
-        return $this;
-    }
-
-    /**
-     * @param array $methods
-     *
-     * @return $this
-     */
-    public function allowMethods(array $methods)
-    {
-        $this->_headers['Access-Control-Allow-Methods'] = $this->_arrayHeaderValue($methods);
-        return $this;
-    }
-
-    /**
-     * @param array $methods
-     *
-     * @return $this
-     */
-    public function exposeMethods(array $methods)
-    {
-        $this->_headers['Access-Control-Expose-Headers'] = $this->_arrayHeaderValue($methods);
-        return $this;
-    }
-
-    /**
-     * @param string $maxAge max age
-     *
-     * @return $this
-     */
-    public function maxAge($maxAge)
-    {
-        $this->_headers['Access-Control-Max-Age'] = $maxAge;
-        return $this;
-    }
-
-    /**
-     * @param bool $allow
-     *
-     * @return $this
-     */
-    public function allowCredentials($allow)
-    {
-        $this->_headers['Access-Control-Allow-Credentials'] = $allow ? 'true' : 'false';
-        return $this;
-    }
-
-    /**
-     * @return array
-     */
-    public function getHeaders()
-    {
-        return $this->_headers;
-    }
-
-    /**
-     * @param $key
-     *
-     * @return string
-     */
-    public function get($key)
-    {
-        if (array_key_exists($key, $this->_headers)) {
-            return $this->_headers[$key];
+        if ($request->getMethod() == 'OPTIONS') {
+            return response('', Response::HTTP_NO_CONTENT, static::$corsHeaders);
         }
-        return null;
-    }
 
-    /**
-     * @param array $headers
-     *
-     * @return string
-     */
-    private function _arrayHeaderValue(array $headers)
-    {
-        return implode(', ', $headers);
+        /** @var \Illuminate\Http\Response $response */
+        $response = $next($request);
+
+        if ($response->getStatusCode() >= 400) {
+            foreach (static::$corsHeaders as $key => $value) {
+                $response->header($key, $value);
+            }
+        }
+
+        return $response;
     }
 
 }

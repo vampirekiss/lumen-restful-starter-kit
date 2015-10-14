@@ -44,9 +44,9 @@ abstract class ApiController extends Controller implements IHttpHandler, IReposi
      * @throws \Exception
      * @return \Illuminate\Http\Response
      */
-    public function handleRequest(Request $request)
+    public function handle(Request $request)
     {
-        /** @var IFormatter $formatter */
+        /** @var \App\Restful\IFormatter $formatter */
         $formatter = $this->make('restful.formatter');
 
         try {

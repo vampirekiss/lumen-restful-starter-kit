@@ -3,17 +3,15 @@
 namespace DummyNamespace;
 
 use App\Restful\ApiController;
-useModelClass
 
-
-class DummyClass extends Handler
+class DummyClass extends ApiController
 {
     /**
      * @var string
      */
-    protected $resourceClass = ShortModelClass::class;
+    protected $resourceClass = \App\Models\DummyModelClass::class;
 
-   /**
+    /**
      * @return array
      */
     protected function getValidationRules()
@@ -21,3 +19,28 @@ class DummyClass extends Handler
         return [];
     }
 }
+
+#split
+
+<?php
+
+namespace DummyNamespace;
+
+use App\Restful\ApiController;
+use App\Restful\RestfulRequest;
+
+class DummyClass extends ApiController
+{
+
+    /**
+     * @param \App\Restful\RestfulRequest $request
+     *
+     * @return \App\Restful\ActionResult
+     */
+    protected function doAction(RestfulRequest $request)
+    {
+        // implements this action
+    }
+
+}
+

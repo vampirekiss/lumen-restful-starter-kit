@@ -8,9 +8,20 @@
 namespace App\Restful;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class RestfulRequest
 {
+    /**
+     * @var string
+     */
+    public $apiClass;
+
+    /**
+     * @var string
+     */
+    public $token;
+
     /**
      * @var string
      */
@@ -32,6 +43,8 @@ class RestfulRequest
     public $resourceId = 0;
 
     /**
+     * jsonp callback
+     *
      * @var string
      */
     public $callback;
@@ -45,8 +58,6 @@ class RestfulRequest
      * @var int
      */
     public $perPage;
-
-    // todo sort, jsonp
 
 
     /**
@@ -64,16 +75,19 @@ class RestfulRequest
             $instance->input = $request->query;
         }
 
-        if ($request->query->has('per-page')) {
-            $instance->perPage = intval($request->query->get('per-page'));
+        if ($request->query->has('per_page')) {
+            $instance->perPage = intval($request->query->get('per_page'));
         }
 
         if ($request->query->has('page')) {
             $instance->page = intval($request->query->get('page'));
         }
 
+        $instance->apiClass = explode('@', $request->route()[1]['uses'])[0];
         $instance->method = $request->getMethod();
         $instance->headers = $request->headers;
+        $instance->token = static::getToken($request);
+        $instance->callback = $request->query->get('jsonp_callback');
 
         $params = $request->route()[2];
         if (isset($params['id'])) {
@@ -82,5 +96,23 @@ class RestfulRequest
         }
 
         return $instance;
+    }
+
+    /**
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return string
+     */
+    public static function getToken(Request $request)
+    {
+        if ($request->query->has('token')) {
+            return $request->query->get('token');
+        }
+
+        $authHeader = strtolower($request->header('Authorization'));
+        if ($authHeader && Str::contains($authHeader, 'token ')) {
+            return str_replace('token ', '', $authHeader);
+        }
+        return '';
     }
 }

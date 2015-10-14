@@ -11,17 +11,16 @@
 |
 */
 
-
-/** @var \App\Restful\RouteRuleBuilder $builder */
-$builder = $app->make('restful.route_ruler_builder');
-
-$builder->setPrefix('api')->setVersion('v1')->setBaseNamespace('App.Http.Api');
-
-$builder->mappingFromArray([
-
+$rules = [
     'User.Authentication' => '/users/auth',
     'User.Users'          => '/users/{id?}'
+];
 
-]);
+/** @var \App\Restful\RouteRuleBuilder $router */
+$router = $app->make('restful.route_ruler_builder');
 
-$builder->buildToApp($app);
+$router->setPrefix('api')->setVersion('v1')->setBaseNamespace('App.Http.Api')
+    ->mappingFromRules($rules)
+    ->withCors()
+    ->withAuth()
+    ->buildToApp($app);

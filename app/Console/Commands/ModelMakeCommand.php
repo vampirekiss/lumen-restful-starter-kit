@@ -31,6 +31,12 @@ class ModelMakeCommand extends GeneratorCommand
     protected $type = 'Model';
 
     /**
+     * @var string
+     */
+    protected $table = '';
+
+
+    /**
      * Execute the console command.
      *
      * @return void
@@ -38,8 +44,8 @@ class ModelMakeCommand extends GeneratorCommand
     public function fire()
     {
         if (parent::fire() !== false) {
-            if ($this->option('migration')) {
-                $table = Str::plural(Str::snake(class_basename($this->argument('name'))));
+            if ($this->option('migration') && $this->table != '') {
+                $table = $this->table;
                 $this->call('make:migration', ['name' => "create_{$table}_table", '--create' => $table]);
             }
             if ($this->option('repository')) {
@@ -47,6 +53,21 @@ class ModelMakeCommand extends GeneratorCommand
             }
         }
     }
+
+    /**
+     * @param string $name
+     *
+     * @return string
+     */
+    protected function buildClass($name)
+    {
+        $stub = parent::buildClass($name);
+        $table = Str::plural(Str::snake(class_basename($this->argument('name'))));
+        $this->table = str_replace('._', '_', $table);
+        $stub = str_replace('DummyTable', $this->table, $stub);
+        return $stub;
+    }
+
 
     /**
      * Get the stub file for the generator.
