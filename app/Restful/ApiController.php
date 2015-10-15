@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Laravel\Lumen\Routing\Controller;
 use App\Restful\Exceptions\RestfulException;
+use App\Restful\ActionHandlers\DocumentHandler;
+use App\Restful\ActionHandlers\CollectionHandler;
 
 /**
  * Restful api controller
@@ -47,7 +49,7 @@ abstract class ApiController extends Controller implements IHttpHandler, IReposi
     public function handle(Request $request)
     {
         /** @var \App\Restful\IFormatter $formatter */
-        $formatter = $this->make('restful.formatter');
+        $formatter = $this->make(IFormatter::class);
 
         try {
             $actionResult = $this->dispatchRequest($formatter, $request);
@@ -128,11 +130,11 @@ abstract class ApiController extends Controller implements IHttpHandler, IReposi
 
         if ($this->resourceClass != null) {
             if ($restfulRequest->resourceId > 0) {
-                $handler = $this->make('restful.handlers.document');
+                $handler = $this->make(DocumentHandler::class);
             } elseif ($restfulRequest->resourceId === 0) {
-                $handler = $this->make('restful.handlers.collection');
+                $handler = $this->make(CollectionHandler::class);
             } else {
-                return function() {
+                return function () {
                     return $this->actionResultBuilder()->setStatusCode(Response::HTTP_NOT_FOUND)
                         ->build();
                 };
@@ -244,7 +246,7 @@ abstract class ApiController extends Controller implements IHttpHandler, IReposi
     {
         if (!$this->repository) {
             if ($this->resourceClass) {
-                $this->repository = $this->make('restful.repository', [$this->resourceClass]);
+                $this->repository = $this->make(IRepository::class, [$this->resourceClass]);
             }
         }
 

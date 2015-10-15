@@ -111,7 +111,11 @@ class ModelRepository implements IRepository
         } else {
             foreach ($params as $name => $value) {
                 if (!empty($name) && $this->hasColumn($name)) {
-                    $query->where($name, '=', $value);
+                    if (Str::contains($value, ',')) {
+                        $query->whereIn($name, explode(',', trim($value, ',')));
+                    } else {
+                        $query->where($name, '=', $value);
+                    }
                     $hasSetCondition = true;
                 }
             }
@@ -220,7 +224,7 @@ class ModelRepository implements IRepository
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
      */
     private function _query()
     {
@@ -237,11 +241,17 @@ class ModelRepository implements IRepository
         static $columns = [];
 
         if (!isset($columns[$this->modelClass])) {
-            /** @var \Illuminate\Database\Connection $connection */
-            $connection = $this->_query()->getQuery()->getConnection();
-            $columns[$this->modelClass] = $connection->getSchemaBuilder()->getColumnListing(
-                str_replace('\\', '', Str::snake(Str::plural(class_basename($this->modelClass))))
-            );
+            // if implemented "getAvailableFields"
+            $callable = [$this->modelClass, 'getAvailableFields'];
+            if (is_callable($callable)) {
+                $columns[$this->modelClass] = call_user_func($callable);
+            } else {
+                /** @var \Illuminate\Database\Connection $connection */
+                $connection = $this->_query()->getQuery()->getConnection();
+                $columns[$this->modelClass] = $connection->getSchemaBuilder()->getColumnListing(
+                    str_replace('\\', '', Str::snake(Str::plural(class_basename($this->modelClass))))
+                );
+            }
         }
 
         return $columns[$this->modelClass];

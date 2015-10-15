@@ -19,12 +19,13 @@ class CreateUsersTable extends Migration
             $table->string('cellphone', 11);
             $table->string('password', 64);
             $table->string('salt', 16);
-            $table->integer('level_id');
             $table->dateTime('last_login_time');
             $table->string('last_login_ip');
             $table->timestamps();
 
             $table->unique('cellphone');
+            $table->unique('account');
+            $table->unique('email');
         });
     }
 

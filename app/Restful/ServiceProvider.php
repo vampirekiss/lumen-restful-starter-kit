@@ -37,23 +37,23 @@ class ServiceProvider extends BaseServiceProvider
      */
     public function register()
     {
-        $this->app->singleton('restful.formatter', function() {
+        $this->app->singleton(IFormatter::class, function () {
             return new JsonFormatter();
         });
 
-        $this->app->bind('restful.repository', function ($app, $params) {
+        $this->app->bind(IRepository::class, function ($app, $params) {
             return new ModelRepository($params[0]);
         });
 
-        $this->app->bind('restful.route_ruler_builder', function() {
+        $this->app->bind(RouteRuleBuilder::class, function () {
             return new RouteRuleBuilder();
         });
 
-        $this->app->singleton('restful.handlers.document', function() {
+        $this->app->singleton(ActionHandlers\DocumentHandler::class, function () {
             return new ActionHandlers\DocumentHandler();
         });
 
-        $this->app->singleton('restful.handlers.collection', function() {
+        $this->app->singleton(ActionHandlers\CollectionHandler::class, function () {
             return new ActionHandlers\CollectionHandler();
         });
     }

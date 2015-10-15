@@ -7,6 +7,7 @@
 
 namespace App\Restful\Formatters;
 
+use App\Restful\StatusTexts;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -43,12 +44,15 @@ class JsonFormatter implements IFormatter
      */
     public function formatActionResult(ActionResult $result)
     {
-        $message = $result->message ? $result->message : Response::$statusTexts[$result->statusCode];
+        $message = $result->message ? $result->message : (
+            isset(StatusTexts::$humanTexts[$result->statusCode]) ?
+                StatusTexts::$humanTexts[$result->statusCode] : Response::$statusTexts[$result->statusCode]
+        );
 
         $value = [
             'code'    => $result->statusCode,
             'data'    => $this->_morphToArray($result->resource),
-            'message' => $message,
+            'message' => ucfirst($message)
         ];
 
         $data = json_encode($value);

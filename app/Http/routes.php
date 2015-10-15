@@ -12,12 +12,12 @@
 */
 
 $rules = [
-    'User.Authentication' => '/users/auth',
-    'User.Users'          => '/users/{id?}'
+    'User.Users'          => '/users/{id?}',
+    'Clients'             => '/clients/{id?}'
 ];
 
 /** @var \App\Restful\RouteRuleBuilder $router */
-$router = $app->make('restful.route_ruler_builder');
+$router = $app->make(\App\Restful\RouteRuleBuilder::class);
 
 $router->setPrefix('api')->setVersion('v1')->setBaseNamespace('App.Http.Api')
     ->mappingFromRules($rules)

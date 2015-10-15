@@ -22,7 +22,7 @@ class Users extends ApiController
     {
         return [
             'POST|PUT' => [
-                'cellphone' => 'required|min:11|max:11',
+                'cellphone' => 'required|digits:11',
                 'password' => 'required|min:4|max:32'
             ],
             'POST' => [

@@ -81,7 +81,6 @@ class ActionResultBuilder
         return $this;
     }
 
-
     /**
      * @param array $messages
      *

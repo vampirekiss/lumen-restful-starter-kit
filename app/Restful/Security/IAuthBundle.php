@@ -7,8 +7,20 @@
 
 namespace App\Restful\Security;
 
-interface IAuthorization
+use App\Restful\RestfulRequest;
+
+
+interface IAuthBundle
 {
+    /**
+     * authenticate
+     *
+     * @param \App\Restful\RestfulRequest $request
+     *
+     * @return \App\Restful\Security\Credential
+     */
+    public function authenticate(RestfulRequest $request);
+
 
     /**
      * validate token
@@ -22,10 +34,10 @@ interface IAuthorization
     /**
      * has rights to access api
      *
-     * @param string $apiClass
-     * @param string $requestMethod
+     * @param \App\Restful\RestfulRequest $request
      *
      * @return bool
      */
-    public function hasRights($apiClass, $requestMethod);
+    public function hasRights($request);
+
 }

@@ -16,7 +16,7 @@ class CorsMiddleware
      */
     public static $corsHeaders = [
         'Access-Control-Allow-Origin'      => '*',
-        'Access-Control-Allow-Headers'     => 'Authorization, Content-Type, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, X-GitHub-OTP, X-Requested-With',
+        'Access-Control-Allow-Headers'     => 'Authorization, Content-Type, If-Match, If-Modified-Since, If-None-Match, If-Unmodified-Since, X-Requested-With',
         'Access-Control-Allow-Methods'     => 'GET, HEAD, POST, PATCH, PUT, DELETE',
         'Access-Control-Expose-Headers'    => 'ETag, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset',
         'Access-Control-Max-Age'           => '86400',

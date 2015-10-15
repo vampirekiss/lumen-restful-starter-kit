@@ -39,4 +39,13 @@ class Validator extends BaseValidator
         return $result->id == $excludeId;
     }
 
+    /**
+     * extend rule "readonly"
+     *
+     * @return bool
+     */
+    protected function validateReadonly()
+    {
+        return false;
+    }
 }
