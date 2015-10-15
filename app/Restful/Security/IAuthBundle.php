@@ -12,6 +12,7 @@ use App\Restful\RestfulRequest;
 
 interface IAuthBundle
 {
+
     /**
      * authenticate
      *
@@ -30,6 +31,17 @@ interface IAuthBundle
      * @return bool
      */
     public function validateToken($token);
+
+
+    /**
+     * validate request
+     *
+     * @param \App\Restful\RestfulRequest $request
+     *
+     * @return bool
+     */
+    public function validateRequest(RestfulRequest $request);
+
 
     /**
      * has rights to access api

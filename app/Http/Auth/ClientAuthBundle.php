@@ -40,7 +40,7 @@ class ClientAuthBundle implements IAuthBundle
         $clientId = $request->input->get('client_id');
 
         if (!$clientId) {
-            throw new RestfulException(Response::HTTP_UNPROCESSABLE_ENTITY, 'missing parameter "client_id"');
+            throw new RestfulException(Response::HTTP_UNPROCESSABLE_ENTITY, 'missing client_id');
         }
 
         $this->_client = Client::enabled($clientId)->first();
@@ -85,6 +85,37 @@ class ClientAuthBundle implements IAuthBundle
         $this->_client = Client::enabled($this->_token->getAttribute('client_id'))->first();
 
         return $this->_client != null;
+    }
+
+    /**
+     * validate request
+     *
+     * @param \App\Restful\RestfulRequest $request
+     *
+     * @return bool
+     */
+    public function validateRequest(RestfulRequest $request)
+    {
+        if (!$this->_client) {
+            return false;
+        }
+
+        $signature = $request->input->get('signature');
+        if (!$signature) {
+            throw new RestfulException(Response::HTTP_BAD_REQUEST, 'missing signature');
+        }
+
+        $params = $request->input->all();
+        $params['token'] = $this->_token->getAttribute('value');
+        unset($params['signature']);
+        ksort($params);
+        
+        $clientSignature = sha1($this->_client->getAttribute('security') . implode(',' , $params));
+        if ($signature != $clientSignature) {
+            throw new RestfulException(Response::HTTP_BAD_REQUEST, 'invalid signature ' . $clientSignature);
+        }
+
+        return true;
     }
 
     /**

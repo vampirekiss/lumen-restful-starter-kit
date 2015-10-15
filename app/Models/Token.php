@@ -29,7 +29,7 @@ class Token extends Model
      */
     public static function uniqueToken()
     {
-        return md5(uniqid() . mt_rand(0, 10000)) . md5(strval(microtime(true)));
+        return sha1(uniqid() . mt_rand(0, 10000) . strval(microtime(true)));
     }
 
     /**

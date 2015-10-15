@@ -99,6 +99,13 @@ class AuthHandler
                 ->build();
         }
 
+        if (!$this->bundle->validateRequest($restfulRequest)) {
+            return $this->actionResultBuilder()
+                ->setStatusCode(Response::HTTP_BAD_REQUEST)
+                ->setMessage('request validation failed')
+                ->build();
+        }
+
         if (!$this->bundle->hasRights($restfulRequest)) {
             return $this->actionResultBuilder()
                 ->setStatusCode(Response::HTTP_FORBIDDEN)
