@@ -2,10 +2,20 @@
 
 Lumen restful starter kit is a restful api kit base on [Lumen](https://github.com/laravel/lumen)
 
+## Features
+
+* Mapping Http Verbs as Model CURD Operations
+* Model CURD event handling
+* Token Authentication
+* Extendable Validation Rules
+* CORS
+* Response Formatters
+* Api & TestCase Command
+
 ## Create a new api
 
 ```
-php artisan make:api Product.Products -m -t
+php artisan make:api User.Users -m -t
 ```
 
 ## Route rule
@@ -20,3 +30,4 @@ $rules = [
     'Clients'             => '/clients/{id?}'
 ];
 ```
+

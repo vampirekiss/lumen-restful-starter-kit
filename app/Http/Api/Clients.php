@@ -3,7 +3,6 @@
 namespace App\Http\Api;
 
 use App\Restful\ApiController;
-use \App\Models\Client;
 
 class Clients extends ApiController
 {
@@ -11,7 +10,7 @@ class Clients extends ApiController
     /**
      * @var string
      */
-    protected $resourceClass = Client::class;
+    protected $resourceClass = \App\Models\Client::class;
 
     /**
      * @param \App\Restful\RestfulRequest $request
