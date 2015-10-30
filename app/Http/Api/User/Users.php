@@ -22,17 +22,14 @@ class Users extends ApiController
     {
         return [
             'POST|PUT' => [
-                'cellphone' => 'required|digits:11',
+                'email' => 'required|email',
                 'password' => 'required|min:4|max:32'
             ],
             'POST' => [
-                'cellphone' => 'unique:users'
+                'email' => 'unique:users'
             ],
             'PUT' => [
-                'cellphone' => 'unique_exclude:users,' . $request->resourceId
-            ],
-            'PATCH' => [
-                'level_id' => 'required'
+                'email' => 'unique_exclude:users,' . $request->resourceId
             ]
         ];
     }

@@ -6,23 +6,12 @@ namespace App\Models;
 /**
  * Class Client
  *
- * @method static \Illuminate\Database\Eloquent\Builder enabled()
+ * @method static \Illuminate\Database\Eloquent\Builder enabled($id)
  */
 class Client extends Model
 {
 
-    const TYPE_USER = 'User';
-
-    const TYPE_ADMIN = 'Admin';
-
-    const TYPE_BACKEND_APP = 'BackendApp';
-
-    /**
-     * @var array
-     */
-    public static $allTypes = [
-        self::TYPE_USER, self::TYPE_ADMIN, self::TYPE_BACKEND_APP
-    ];
+    const DEFAULT_EXPIRES_IN = 7200;
 
     /**
      * The table associated with the model.
@@ -30,11 +19,6 @@ class Client extends Model
      * @var string
      */
     protected $table = 'clients';
-
-    /**
-     * @var array
-     */
-    protected $fillable = ['name', 'type', 'scopes'];
 
     /**
      * @var array
@@ -72,21 +56,6 @@ class Client extends Model
         }
 
         return time() + $expires_in;
-    }
-
-    /**
-     * @param \App\Models\Token $token
-     *
-     * @return bool
-     */
-    public function tokenIsExpired(Token $token)
-    {
-        $expires_at = $token->getAttribute('expires_at');
-        if ($expires_at <= 0) {
-            return false;
-        }
-
-        return time() <= $expires_at;
     }
 
 }

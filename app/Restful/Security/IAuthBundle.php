@@ -39,6 +39,6 @@ interface IAuthBundle
      *
      * @return bool
      */
-    public function hasRights($request);
+    public function hasRights(RestfulRequest $request);
 
 }

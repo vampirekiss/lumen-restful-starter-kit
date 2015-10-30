@@ -54,6 +54,9 @@ class ApiMakeCommand extends GeneratorCommand
                 $table = str_replace('._', '_', Str::plural(Str::snake(class_basename($this->argument('name')))));
                 $this->call('make:migration', ['name' => "create_{$table}_table", '--create' => $table]);
             }
+            if ($this->option('testcase')) {
+                $this->call('make:test', ['name' => $this->argument('name')]);
+            }
         }
     }
 
@@ -102,7 +105,8 @@ class ApiMakeCommand extends GeneratorCommand
     protected function getOptions()
     {
         return [
-            ['model', 'm', InputOption::VALUE_NONE, 'Create a new model file for the api.']
+            ['model', 'm', InputOption::VALUE_NONE, 'Create a new model file for this api.'],
+            ['testcase', 't', InputOption::VALUE_NONE, 'Create a new test case for this api.']
         ];
     }
 

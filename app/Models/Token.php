@@ -6,7 +6,7 @@ namespace App\Models;
 /**
  * Class Token
  *
- * @method static \Illuminate\Database\Eloquent\Builder ofToken()
+ * @method static \Illuminate\Database\Eloquent\Builder|Model ofToken($token)
  */
 class Token extends Model
 {
@@ -16,11 +16,6 @@ class Token extends Model
      * @var string
      */
     protected $table = 'tokens';
-
-    /**
-     * @var array
-     */
-    protected $fillable = ['client_id', 'uid', 'value', 'expires_at'];
 
     /**
      * generate unique token
@@ -40,8 +35,9 @@ class Token extends Model
      */
     public function scopeOfToken($query, $token)
     {
-        return $query->where('value', '=', $token);
+        return $query->where('token', '=', $token);
     }
+
 
     /**
      * @return bool
@@ -49,11 +45,6 @@ class Token extends Model
     public function isExpired()
     {
         $expires_at = $this->getAttribute('expires_at');
-
-        if ($expires_at <= 0) {
-            return false;
-        }
-
         return $expires_at - time() <= 0;
     }
 }

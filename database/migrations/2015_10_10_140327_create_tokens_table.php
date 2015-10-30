@@ -15,11 +15,14 @@ class CreateTokensTable extends Migration
         Schema::create('tokens', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('client_id');
-            $table->string('uid');
-            $table->string('value');
+            $table->integer('uid');
+            $table->string('token');
+            $table->integer('expires_in');
             $table->integer('expires_at');
-            $table->unique('value');
+
+            $table->unique('token');
             $table->unique(['client_id', 'uid']);
+
             $table->timestamps();
         });
     }

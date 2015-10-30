@@ -15,9 +15,7 @@ class CreateClientsTable extends Migration
         Schema::create('clients', function (Blueprint $table) {
             $table->increments('id');
             $table->string('name');
-            $table->string('type')->default(\App\Models\Client::TYPE_USER);
             $table->string('secret');
-            $table->integer('rate_limit');
             $table->integer('expires_in');
             $table->mediumText('scopes');
             $table->boolean('disabled')->default(false);

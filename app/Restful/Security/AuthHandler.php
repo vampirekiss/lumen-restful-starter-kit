@@ -44,7 +44,7 @@ class AuthHandler
 
         try {
             if (strtolower($authPath) == strtolower($request->path())) {
-                return $formatter->formatActionResult($this->_authenticate($restfulRequest, $authPath));
+                return $formatter->formatActionResult($this->_authenticate($restfulRequest));
             }
             $result = $this->_authorize($restfulRequest);
             if ($result) {

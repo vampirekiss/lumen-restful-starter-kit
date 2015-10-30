@@ -7,8 +7,8 @@
 
 namespace App\Http\Auth;
 
+use App\Http\Mixin\GetClient;
 use Illuminate\Http\Response;
-use App\Models\Client;
 use App\Models\Token;
 use App\Restful\Exceptions\RestfulException;
 use App\Restful\RestfulRequest;
@@ -18,15 +18,7 @@ use App\Restful\Security\IAuthBundle;
 
 class ClientAuthBundle implements IAuthBundle
 {
-    /**
-     * @var \App\Models\Token
-     */
-    private $_token;
-
-    /**
-     * @var \App\Models\Client
-     */
-    private $_client;
+    use GetClient;
 
     /**
      * authenticate
@@ -37,82 +29,45 @@ class ClientAuthBundle implements IAuthBundle
      */
     public function authenticate(RestfulRequest $request)
     {
-        $clientId = $request->input->get('client_id');
+        $client = $this->getClientOrFail($request);
 
-        if (!$clientId) {
-            throw new RestfulException(Response::HTTP_UNPROCESSABLE_ENTITY, 'missing client_id');
+        $secret = $request->query->get('secret');
+        if (!$secret) {
+            throw new RestfulException(Response::HTTP_BAD_REQUEST, 'missing secret');
         }
 
-        $this->_client = Client::enabled($clientId)->first();
-
-        if (!$this->_client) {
-            throw new RestfulException(Response::HTTP_UNPROCESSABLE_ENTITY, 'invalid client_id');
+        if ($secret != $client->getAttribute('secret')) {
+            throw new RestfulException(Response::HTTP_BAD_REQUEST, 'invalid secret');
         }
 
-        $this->_token = Token::updateOrCreate([
-            'client_id' => $clientId,
-            'uid' => $request->input->get('username')
-        ], [
-            'value' => Token::uniqueToken(),
-            'expires_at' => $this->_client->getTokenExpiresAt()
+        /** @var \App\Models\Token $token */
+        $token = Token::ofToken($token)->firstOrNew([
+            'client_id' => $client->getAttribute('id'),
+            'token' => Token::uniqueToken(),
+            'expires_in' => intval($client->getAttribute('expires_in'))
         ]);
 
         return new Credential(
-            $this->_token->getAttribute('value'),
-            max($this->_token->getAttribute('expires_at') - time(), 0)
+            $token->getAttribute('token'), $token->getAttribute('expires_in')
         );
     }
 
     /**
-     * validate token
-     *
-     * @param string $token
-     *
-     * @return bool
-     */
-    public function validateToken($token)
-    {
-        if (empty($token)) {
-            return false;
-        }
-
-        $this->_token = Token::ofToken($token)->first();
-
-        if ($this->_token == null || $this->_token->isExpired()) {
-            throw new RestfulException(Response::HTTP_UNAUTHORIZED, "invalid token");
-        }
-
-        $this->_client = Client::enabled($this->_token->getAttribute('client_id'))->first();
-
-        return $this->_client != null;
-    }
-
-    /**
-     * validate request
-     *
      * @param \App\Restful\RestfulRequest $request
      *
      * @return bool
      */
-    public function validateRequest(RestfulRequest $request)
+    public function isAuthorized(RestfulRequest $request)
     {
-        if (!$this->_client) {
-            return false;
+        if (!$request->token) {
+            throw new RestfulException(Response::HTTP_UNAUTHORIZED, "missing token");
         }
 
-        $signature = $request->input->get('signature');
-        if (!$signature) {
-            throw new RestfulException(Response::HTTP_BAD_REQUEST, 'missing signature');
-        }
+        /** @var \App\Models\Token $tokenModel */
+        $tokenModel = Token::ofToken($request->token)->first();
 
-        $params = $request->input->all();
-        $params['token'] = $this->_token->getAttribute('value');
-        unset($params['signature']);
-        ksort($params);
-        
-        $clientSignature = sha1($this->_client->getAttribute('security') . implode(',' , $params));
-        if ($signature != $clientSignature) {
-            throw new RestfulException(Response::HTTP_BAD_REQUEST, 'invalid signature ' . $clientSignature);
+        if ($tokenModel == null || $tokenModel->isExpired()) {
+            throw new RestfulException(Response::HTTP_UNAUTHORIZED, "token is invalid or expired");
         }
 
         return true;
@@ -125,7 +80,7 @@ class ClientAuthBundle implements IAuthBundle
      *
      * @return bool
      */
-    public function hasRights($request)
+    public function hasRights(RestfulRequest $request)
     {
         return true;
     }

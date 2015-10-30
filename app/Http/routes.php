@@ -19,8 +19,9 @@ $rules = [
 /** @var \App\Restful\RouteRuleBuilder $router */
 $router = $app->make(\App\Restful\RouteRuleBuilder::class);
 
-$router->setPrefix('api')->setVersion('v1')->setBaseNamespace('App.Http.Api')
+$router->setVersion('v1')->setBaseNamespace('App.Http.Api')
     ->mappingFromRules($rules)
     ->withCors()
     ->withAuth()
     ->buildToApp($app);
+

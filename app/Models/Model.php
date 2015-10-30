@@ -24,6 +24,13 @@ abstract class Model extends BaseModel
     const EVENT_DELETED = 'deleted';
 
     /**
+     * Indicates if all mass assignment is enabled.
+     *
+     * @var bool
+     */
+    protected static $unguarded = true;
+
+    /**
      * The attributes that should be encode/decode with json
      *
      * @var array
@@ -63,6 +70,14 @@ abstract class Model extends BaseModel
     }
 
     /**
+     * @return string
+     */
+    public static function defaultOrderByString()
+    {
+        return "id desc";
+    }
+
+    /**
      * The "booting" method of the model.
      *
      * @return void
@@ -78,7 +93,6 @@ abstract class Model extends BaseModel
             });
         }
     }
-
 
     /**
      * handle event
@@ -109,14 +123,33 @@ abstract class Model extends BaseModel
     /**
      * @param string $key
      * @param mixed  $value
+     *
+     * @return $this
      */
     public function setAttribute($key, $value)
     {
         if (in_array($key, $this->jsonFields)) {
             $value = json_encode($value);
         }
-        parent::setAttribute($key, $value);
+
+        return parent::setAttribute($key, $value);
     }
+
+    /**
+     * Get an attribute from the $attributes array.
+     *
+     * @param  string  $key
+     * @return mixed
+     */
+    protected function getAttributeFromArray($key)
+    {
+        $value = parent::getAttributeFromArray($key);
+        if (in_array($key, $this->booleanFields)) {
+            $value = boolval($value);
+        }
+        return $value;
+    }
+
 
     /**
      * @return array
@@ -125,10 +158,14 @@ abstract class Model extends BaseModel
     {
         $attributes = parent::attributesToArray();
         foreach ($this->jsonFields as $field) {
-            $attributes[$field] = json_decode($attributes[$field], true);
+            if (array_key_exists($field, $attributes)) {
+                $attributes[$field] = json_decode($attributes[$field], true);
+            }
         }
         foreach ($this->booleanFields as $field) {
-            $attributes[$field] = boolval($attributes[$field]);
+            if (array_key_exists($field, $attributes)) {
+                $attributes[$field] = boolval($attributes[$field]);
+            }
         }
         return $attributes;
     }

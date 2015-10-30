@@ -14,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton(IAuthBundle::class, function () {
+        $this->app->bind(IAuthBundle::class, function () {
             return new \App\Http\Auth\ClientAuthBundle;
         });
     }

@@ -186,7 +186,7 @@ class RouteRuleBuilder
                 $this->_buildRouteRules($app);
             });
         } else {
-            $this->_buildRouteRules($app, '');
+            $this->_buildRouteRules($app);
         }
     }
 

@@ -1,0 +1,25 @@
+<?php
+
+
+return [
+
+    'connections' => [
+
+        'mysql' => [
+            'driver'    => 'mysql',
+            'host'      => 'localhost',
+            'database'  => 'lumen',
+            'username'  => 'root',
+            'password'  => '',
+            'charset'   => 'utf8',
+            'collation' => 'utf8_unicode_ci',
+            'prefix'    => '',
+        ]
+    ],
+
+    'default' => 'mysql',
+
+    'migrations' => 'migrations',
+
+    'fetch' => \PDO::FETCH_CLASS
+];

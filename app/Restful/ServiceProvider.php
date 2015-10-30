@@ -49,11 +49,11 @@ class ServiceProvider extends BaseServiceProvider
             return new RouteRuleBuilder();
         });
 
-        $this->app->singleton(ActionHandlers\DocumentHandler::class, function () {
+        $this->app->bind(ActionHandlers\DocumentHandler::class, function () {
             return new ActionHandlers\DocumentHandler();
         });
 
-        $this->app->singleton(ActionHandlers\CollectionHandler::class, function () {
+        $this->app->bind(ActionHandlers\CollectionHandler::class, function () {
             return new ActionHandlers\CollectionHandler();
         });
     }
