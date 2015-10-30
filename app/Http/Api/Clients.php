@@ -23,8 +23,7 @@ class Clients extends ApiController
         return [
             'POST|PUT' => [
                 'name' => 'required|max:100',
-                'scopes' => 'required',
-                'type' => 'required|in:' . implode(',', Client::$allTypes)
+                'scopes' => 'required'
             ]
         ];
     }
