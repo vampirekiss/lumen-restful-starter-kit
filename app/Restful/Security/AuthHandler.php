@@ -93,16 +93,9 @@ class AuthHandler
      */
     private function _authorize($restfulRequest)
     {
-        if (!$this->bundle->validateToken($restfulRequest->token)) {
+        if (!$this->bundle->isAuthorized($restfulRequest)) {
             return $this->actionResultBuilder()
                 ->setStatusCode(Response::HTTP_UNAUTHORIZED)
-                ->build();
-        }
-
-        if (!$this->bundle->validateRequest($restfulRequest)) {
-            return $this->actionResultBuilder()
-                ->setStatusCode(Response::HTTP_BAD_REQUEST)
-                ->setMessage('request validation failed')
                 ->build();
         }
 

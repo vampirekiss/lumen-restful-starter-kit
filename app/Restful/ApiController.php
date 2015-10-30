@@ -9,10 +9,12 @@ namespace App\Restful;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
 use Laravel\Lumen\Routing\Controller;
 use App\Restful\Exceptions\RestfulException;
 use App\Restful\ActionHandlers\DocumentHandler;
 use App\Restful\ActionHandlers\CollectionHandler;
+
 
 /**
  * Restful api controller
@@ -39,6 +41,14 @@ abstract class ApiController extends Controller implements IHttpHandler, IReposi
     protected $resourceClass = '';
 
     /**
+     * @return array
+     */
+    public static function allowMethods()
+    {
+        return ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'];
+    }
+
+    /**
      * handle request
      *
      * @param Request $request
@@ -51,12 +61,29 @@ abstract class ApiController extends Controller implements IHttpHandler, IReposi
         /** @var \App\Restful\IFormatter $formatter */
         $formatter = $this->make(IFormatter::class);
 
+        if (!in_array($request->getMethod(), static::allowMethods())) {
+            $actionResult = $this->actionResultBuilder()
+                ->setStatusCode(Response::HTTP_METHOD_NOT_ALLOWED)
+                ->build();
+
+            return $formatter->formatActionResult($actionResult);
+        }
+
         try {
             $actionResult = $this->dispatchRequest($formatter, $request);
         } catch (\Exception $e) {
             if ($e instanceof RestfulException) {
                 $actionResult = $e->toActionResult();
             } else {
+                if (app()->environment() == 'production') {
+                    app()->make(ExceptionHandler::class)->report($e);
+
+                    return $formatter->formatActionResult(
+                        $this->actionResultBuilder()
+                            ->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR)
+                            ->build()
+                    );
+                }
                 throw $e;
             }
         }

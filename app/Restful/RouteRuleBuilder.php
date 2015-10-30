@@ -41,6 +41,11 @@ class RouteRuleBuilder
     private $_rules = [];
 
     /**
+     * @var bool
+     */
+    private $_useAuth = false;
+
+    /**
      * @var array
      */
     public $middleware;
@@ -55,6 +60,7 @@ class RouteRuleBuilder
     public function __construct(array $middleware = [])
     {
         $this->middleware = $middleware;
+        app()->middleware([Middleware\FormatterMiddleware::class]);
     }
 
     /**
@@ -135,6 +141,7 @@ class RouteRuleBuilder
         $authPath = $prefix != '/' ? sprintf('%s%s', $prefix, $path) : $path;
         $this->_rules[$authPath] = $path;
         $this->addMiddleware('auth', Middleware\AuthMiddleware::class . ':' . $authPath);
+        $this->_useAuth = true;
 
         return $this;
     }
@@ -179,7 +186,7 @@ class RouteRuleBuilder
                 $this->_buildRouteRules($app);
             });
         } else {
-            $this->_buildRouteRules($app);
+            $this->_buildRouteRules($app, '');
         }
     }
 
@@ -189,12 +196,16 @@ class RouteRuleBuilder
     private function _buildRouteRules(Application $app)
     {
         foreach ($this->_rules as $class => $regexpUri) {
+            $isPublicClass = $class['0'] == '@';
             $class = $this->_baseNamespace ? sprintf('%s.%s', $this->_baseNamespace, $class) : $class;
-            $class = str_replace('.', '\\', $class);
+            $class = str_replace(['.', '@'], ['\\', ''], $class);
             $action = sprintf('%s@handle', $class);
             $uris = $this->_parseUri($regexpUri);
             foreach (static::$accessableMethods as $method) {
                 foreach ($uris as $uri) {
+                    if ($isPublicClass && $this->_useAuth) {
+                        Middleware\AuthMiddleware::addPublicResource($class);
+                    }
                     $app->addRoute($method, $uri, $action);
                 }
             }

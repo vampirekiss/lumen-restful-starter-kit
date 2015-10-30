@@ -30,6 +30,11 @@ class RestfulRequest
     /**
      * @var \Symfony\Component\HttpFoundation\ParameterBag
      */
+    public $query;
+
+    /**
+     * @var \Symfony\Component\HttpFoundation\ParameterBag
+     */
     public $input;
 
     /**
@@ -75,6 +80,7 @@ class RestfulRequest
             $instance->input = $request->query;
         }
 
+
         if ($request->query->has('per_page')) {
             $instance->perPage = intval($request->query->get('per_page'));
         }
@@ -83,11 +89,12 @@ class RestfulRequest
             $instance->page = intval($request->query->get('page'));
         }
 
+        $instance->query = $request->query;
         $instance->apiClass = explode('@', $request->route()[1]['uses'])[0];
         $instance->method = $request->getMethod();
         $instance->headers = $request->headers;
         $instance->token = static::getToken($request);
-        $instance->callback = $request->query->get('jsonp_callback');
+        $instance->callback = $request->query->get('callback');
 
         $params = $request->route()[2];
         if (isset($params['id'])) {

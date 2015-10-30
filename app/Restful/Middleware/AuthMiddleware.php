@@ -12,6 +12,10 @@ use App\Restful\Security\AuthHandler;
 
 class AuthMiddleware
 {
+    /**
+     * @var array
+     */
+    protected static $publicResource = [];
 
     /**
      * @var \App\Restful\Security\AuthHandler
@@ -31,6 +35,17 @@ class AuthMiddleware
     }
 
     /**
+     * @param string $class
+     *
+     * @return void
+     */
+    public static function addPublicResource($class)
+    {
+        static::$publicResource[$class] = $class;
+    }
+
+
+    /**
      * Handle an incoming request.
      *
      * @param  \Illuminate\Http\Request $request
@@ -41,11 +56,16 @@ class AuthMiddleware
      */
     public function handle($request, \Closure $next, $authPath)
     {
-        $response = $this->authHandler->handle($request, $authPath);
 
-        if ($response) {
-            return $response;
+        $class = explode('@', $request->route()[1]['uses'])[0];
+        if (!array_key_exists($class, static::$publicResource)) {
+            $response = $this->authHandler->handle($request, $authPath);
+
+            if ($response) {
+                return $response;
+            }
         }
+
 
         return $next($request);
     }

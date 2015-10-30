@@ -8,7 +8,6 @@
 namespace App\Restful\Repositories;
 
 use App\Restful\IRepository;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\ParameterBag;
 
 class ModelRepository implements IRepository
@@ -56,6 +55,14 @@ class ModelRepository implements IRepository
             }
         }
 
+        $method = 'defaultOrderByString';
+        if (in_array($method, get_class_methods($this->modelClass))) {
+            $orderBy = call_user_func([$this->modelClass, $method]);
+            if ($orderBy) {
+                $query->orderByRaw($orderBy);
+            }
+        }
+
         !$perPage && $perPage = intval(env('RESTFUL_PER_PAGE', 40));
         !$page && $page = 1;
 
@@ -66,12 +73,30 @@ class ModelRepository implements IRepository
         return [
             'total'         => $array['total'],
             'per_page'      => $array['per_page'],
-            'next_page_ur'  => $array['next_page_url'] ?: '',
-            'prev_page_url' => $array['prev_page_url'] ?: '',
+            'next_page_ur'  => $this->_pageUrl($array['next_page_url'], $params),
+            'prev_page_url' => $this->_pageUrl($array['prev_page_url'], $params),
             'current_page'  => $array['current_page'],
             'last_page'     => max($array['last_page'], 1),
             'list'          => $array['data']
         ];
+    }
+
+    /**
+     * @param string                                         $url
+     * @param \Symfony\Component\HttpFoundation\ParameterBag $params
+     *
+     * @return string
+     */
+    private function _pageUrl($url, ParameterBag $params)
+    {
+        if (!$url) {
+            return '';
+        }
+
+        $allParams = $params->all();
+        unset($allParams['page']);
+        $strParams = http_build_query($allParams);
+        return $url . '&' . $strParams;
     }
 
     /**
@@ -154,11 +179,12 @@ class ModelRepository implements IRepository
         if ($id <= 0) {
             return null;
         }
+
         return $this->_call('find', [$id]);
     }
 
     /**
-     * @param int $id
+     * @param int   $id
      * @param array $input
      *
      * @return \Illuminate\Database\Eloquent\Model|null
@@ -182,7 +208,7 @@ class ModelRepository implements IRepository
     /**
      * replace a resource by id
      *
-     * @param int $id
+     * @param int   $id
      * @param array $input
      *
      * @return \Illuminate\Database\Eloquent\Model|null
@@ -195,6 +221,7 @@ class ModelRepository implements IRepository
             if ($id > 0) {
                 return $this->create($input, $id);
             }
+
             return null;
         }
 
@@ -220,6 +247,7 @@ class ModelRepository implements IRepository
     private function _call($method, $params = [])
     {
         $callable = [$this->modelClass, $method];
+
         return call_user_func_array($callable, $params);
     }
 

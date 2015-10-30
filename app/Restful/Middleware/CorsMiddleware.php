@@ -34,17 +34,23 @@ class CorsMiddleware
     public function handle($request, \Closure $next)
     {
         if ($request->getMethod() == 'OPTIONS') {
-            return response('', Response::HTTP_NO_CONTENT, static::$corsHeaders);
+            $headers = array_merge(static::$corsHeaders, [
+                'Access-Control-Allow-Origin' => $request->header('Origin', '*')
+            ]);
+            return response('', Response::HTTP_NO_CONTENT, $headers);
         }
 
         /** @var \Illuminate\Http\Response $response */
         $response = $next($request);
 
         if ($response->getStatusCode() >= 400) {
-            foreach (static::$corsHeaders as $key => $value) {
-                $response->header($key, $value);
-            }
+            $response->header(
+                'Access-Control-Expose-Headers',
+                static::$corsHeaders['Access-Control-Expose-Headers']
+            );
         }
+
+        $response->header('Access-Control-Allow-Origin', $request->header('Origin', '*'));
 
         return $response;
     }

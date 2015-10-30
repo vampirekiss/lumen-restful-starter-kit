@@ -22,29 +22,18 @@ interface IAuthBundle
      */
     public function authenticate(RestfulRequest $request);
 
-
     /**
-     * validate token
-     *
-     * @param string $token
-     *
-     * @return bool
-     */
-    public function validateToken($token);
-
-
-    /**
-     * validate request
+     * is authorized
      *
      * @param \App\Restful\RestfulRequest $request
      *
      * @return bool
      */
-    public function validateRequest(RestfulRequest $request);
+    public function isAuthorized(RestfulRequest $request);
 
 
     /**
-     * has rights to access api
+     * check has rights to access api after authorized
      *
      * @param \App\Restful\RestfulRequest $request
      *
