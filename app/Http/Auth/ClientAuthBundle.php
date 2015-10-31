@@ -41,7 +41,7 @@ class ClientAuthBundle implements IAuthBundle
         }
 
         /** @var \App\Models\Token $token */
-        $token = Token::ofToken($token)->firstOrNew([
+        $token = Token::ofToken($request->token)->firstOrNew([
             'client_id' => $client->getAttribute('id'),
             'token' => Token::uniqueToken(),
             'expires_in' => intval($client->getAttribute('expires_in'))
