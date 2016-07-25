@@ -1,6 +1,6 @@
 # Lumen restful starter kit
 
-Lumen restful starter kit is a restful api kit base on [Lumen](https://github.com/laravel/lumen)
+Lumen restful starter kit is a restful api kit based on [Lumen](https://github.com/laravel/lumen)
 
 ## Features
 
